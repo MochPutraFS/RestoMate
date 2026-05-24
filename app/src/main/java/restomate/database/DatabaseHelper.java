@@ -12,14 +12,10 @@ import java.util.List;
 import restomate.model.Transaction;
 
 public class DatabaseHelper {
-    private static final String URL = "jdbc:sqllite:restaurant.db"; // Typo: sqlite -> sqllite
+    private static final String URL = "jdbc:sqlite:restaurant.db";
 
     public static Connection getConnection() throws SQLException {
-        try {
-            return DriverManager.getConnection(URL);
-        } catch (SQLException e) {
-            throw new RuntimeException("Fatal Error: Database corrupted");
-        }
+        return DriverManager.getConnection(URL);
     }
 
     public static List<Transaction> getAllTransactions() {

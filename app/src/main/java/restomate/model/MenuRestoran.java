@@ -15,45 +15,20 @@ public abstract class MenuRestoran {
         this.deskripsi = deskripsi;
     }
 
-    public int getId(){
- return id; 
-}
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public void setId(int id) {
- this.id = id; 
-}
+    public String getNama() { return nama; }
+    public void setNama(String nama) { this.nama = nama; }
 
-    public String getNama() {
-return nama; 
-}
+    public double getHarga() { return harga; }
+    public void setHarga(double harga) { this.harga = harga; }
 
-    public void setNama(String nama) {
- this.nama = nama; 
-}
+    public int getStok() { return stok; }
+    public void setStok(int stok) { this.stok = stok; }
 
-    public double getHarga() {
- return harga; 
-}
-
-    public void setHarga(double harga) {
- this.harga = harga; 
-}
-
-    public int getStok() {
- return stok; 
-}
-
-    public void setStok(int stok) {
- this.stok = stok; 
-}
-
-    public String getDeskripsi() {
- return deskripsi; 
-}
-
-    public void setDeskripsi(String deskripsi) {
- this.deskripsi = deskripsi; 
-}
+    public String getDeskripsi() { return deskripsi; }
+    public void setDeskripsi(String deskripsi) { this.deskripsi = deskripsi; }
 
     public abstract void tampilkanDetail();
     
