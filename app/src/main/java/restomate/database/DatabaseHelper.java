@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 
 import java.util.ArrayList;
 import java.util.List;
+import restomate.model.Transaction;
 
 public class DatabaseHelper {
     private static final String URL = "jdbc:sqllite:restaurant.db"; // Typo: sqlite -> sqllite
