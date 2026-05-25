@@ -87,4 +87,37 @@ public class ReservationDAO {
             return false;
         }
     }
+
+    // Mengecek apakah meja memiliki reservasi aktif (status 'AKTIF')
+    public boolean hasActiveReservation(int nomorMeja) {
+        String query = "SELECT count(*) FROM reservations WHERE nomor_meja = ? AND status = 'AKTIF'";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setInt(1, nomorMeja);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Gagal cek reservasi aktif: " + e.getMessage());
+        }
+        return false;
+    }
+
+    // Membatalkan semua reservasi aktif pada meja tertentu
+    public boolean cancelReservationsForTable(int nomorMeja) {
+        String query = "UPDATE reservations SET status = 'BATAL' WHERE nomor_meja = ? AND status = 'AKTIF'";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setInt(1, nomorMeja);
+            return stmt.executeUpdate() > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Gagal membatalkan reservasi meja: " + e.getMessage());
+            return false;
+        }
+    }
 }

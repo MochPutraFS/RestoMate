@@ -69,6 +69,21 @@ public class Database {
                     "status TEXT DEFAULT 'AKTIF'" +
                     ");");
 
+            stmt.execute("CREATE TABLE IF NOT EXISTS restaurant_tables (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "nomor_meja INTEGER NOT NULL UNIQUE" +
+                    ");");
+
+            try {
+                var rsMeja = stmt.executeQuery("SELECT count(*) FROM restaurant_tables");
+                if (rsMeja.next() && rsMeja.getInt(1) == 0) {
+                    for (int i = 1; i <= 12; i++) {
+                        stmt.execute("INSERT INTO restaurant_tables (nomor_meja) VALUES (" + i + ")");
+                    }
+                    System.out.println("Default 12 tables seeded.");
+                }
+            } catch (SQLException ignore) { }
+
             try {
                 var rs = stmt.executeQuery("SELECT count(*) FROM users WHERE username = 'admin'");
                 if (rs.next() && rs.getInt(1) == 0) {
