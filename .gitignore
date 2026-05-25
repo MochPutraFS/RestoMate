@@ -40,3 +40,6 @@ Laporan_RestoMate_*.txt
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+#optional
+.jpg
