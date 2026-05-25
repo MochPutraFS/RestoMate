@@ -200,4 +200,5 @@ public class ReservationView {
     public Button getBtnTambahMeja() { return btnTambahMeja; }
     public Button getBtnHapusMeja() { return btnHapusMeja; }
     public GridPane getTableGrid() { return tableGrid; }
+    public ReservationController getController() { return controller; }
 }
