@@ -8,43 +8,43 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class Main extends Application {
-    
-    // Kita simpan scene utamanya di sini biar gampang kalau mau ganti-ganti halaman
+
     private static Scene mainScene;
     private static Stage mainStage;
 
     @Override
     public void start(Stage primaryStage) {
         mainStage = primaryStage;
-        
-        // Pemanasan dulu, inisialisasi database pas aplikasi baru nyala.
-        // Biar tabel-tabelnya ke-create dan akun admin default siap dipake.
+
+        // Inisialisasi database saat aplikasi nyala
         Database.initializeDatabase();
 
-        // Mulai dari halaman Login dulu dong pastinya
+        // Mulai dari halaman Login
         LoginView loginView = new LoginView();
-        
-        mainScene = new Scene(loginView.getView(), 1024, 768);
-        
-        // Sedikit styling dasar biar nggak kaku banget
-        mainScene.getRoot().setStyle("-fx-font-family: 'Segoe UI', sans-serif; -fx-background-color: #F5F5F5;");
+
+        mainScene = new Scene(loginView.getView(), 900, 620);
+
+        // Tema font global — background diatur per halaman
+        mainScene.getRoot().setStyle(
+                "-fx-font-family: 'Segoe UI', sans-serif;");
 
         primaryStage.setTitle("RestoMate - Restaurant Management System");
         primaryStage.setScene(mainScene);
         primaryStage.setMinWidth(800);
-        primaryStage.setMinHeight(600);
+        primaryStage.setMinHeight(580);
         primaryStage.show();
     }
 
-    // Fungsi sakti buat pindah halaman dengan gampang
-    // Tinggal panggil Main.setRoot(viewBaru) dari mana aja
+    /**
+     * Fungsi untuk pindah halaman dari mana saja.
+     * Contoh: Main.setRoot(new LoginView().getView());
+     */
     public static void setRoot(Parent root) {
         mainScene.setRoot(root);
-        // Pastiin style bawaan tetep nempel tiap ganti root
-        root.setStyle("-fx-font-family: 'Segoe UI', sans-serif; -fx-background-color: #F5F5F5;");
+        // Pertahankan font global, background diatur oleh masing-masing view
+        root.setStyle("-fx-font-family: 'Segoe UI', sans-serif;");
     }
-    
-    // Buat jaga-jaga kalau butuh nutup paksa dari kode
+
     public static void closeApp() {
         mainStage.close();
     }

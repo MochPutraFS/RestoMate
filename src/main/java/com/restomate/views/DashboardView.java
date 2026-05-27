@@ -19,97 +19,164 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.Priority;
+import javafx.scene.shape.Rectangle;
 
 public class DashboardView {
 
     private BorderPane root;
     private StackPane centerContainer;
     private User currentUser;
-    
-    // Simpan instance view biar gak bolak-balik dibikin ulang pas diklik (menghemat memori)
+
     private CashierView cashierView;
     private ManageMenuView manageMenuView;
     private ReservationView reservationView;
     private ReportView reportView;
-    
-    // Pelacakan status aktif sidebar
+
     private Button activeButton;
     private Button btnKasirRef;
 
-    private static final String STYLE_NORMAL = "-fx-background-color: transparent; -fx-text-fill: #555555; -fx-alignment: center-left; -fx-padding: 12 20; -fx-font-weight: normal; -fx-border-color: transparent; -fx-border-width: 0 0 0 4; -fx-border-style: solid; -fx-background-radius: 0; -fx-font-size: 14px;";
-    private static final String STYLE_ACTIVE = "-fx-background-color: #E3F2FD; -fx-text-fill: #2196F3; -fx-alignment: center-left; -fx-padding: 12 20; -fx-font-weight: bold; -fx-border-color: #2196F3; -fx-border-width: 0 0 0 4; -fx-border-style: solid; -fx-background-radius: 0; -fx-font-size: 14px;";
-    private static final String STYLE_HOVER = "-fx-background-color: #F0F4C3; -fx-text-fill: #827717; -fx-alignment: center-left; -fx-padding: 12 20; -fx-font-weight: normal; -fx-border-color: #D4E157; -fx-border-width: 0 0 0 4; -fx-border-style: solid; -fx-background-radius: 0; -fx-font-size: 14px;";
-    // Kita gunakan perpaduan warna hover premium yang lebih selaras dengan tema biru RestoMate:
-    private static final String STYLE_HOVER_BLUE = "-fx-background-color: #ECEFF1; -fx-text-fill: #2196F3; -fx-alignment: center-left; -fx-padding: 12 20; -fx-font-weight: normal; -fx-border-color: #CFD8DC; -fx-border-width: 0 0 0 4; -fx-border-style: solid; -fx-background-radius: 0; -fx-font-size: 14px;";
+    // === Tema Restoran: Sidebar coklat tua, aksen merah marun ===
+    private static final String COLOR_SIDEBAR   = "#2C1A0E";
+    private static final String COLOR_ACTIVE_BG = "#C0392B";
+    private static final String COLOR_HOVER_BG  = "#3D2512";
+    private static final String COLOR_TEXT_NORM = "#BDC3C7";
+    private static final String COLOR_TEXT_ACT  = "#FFFFFF";
+
+    private static final String STYLE_NORMAL =
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: " + COLOR_TEXT_NORM + ";" +
+            "-fx-alignment: center-left;" +
+            "-fx-padding: 10 15;" +
+            "-fx-font-size: 12px;" +
+            "-fx-background-radius: 0;" +
+            "-fx-border-color: transparent;" +
+            "-fx-border-width: 0 0 0 4;";
+
+    private static final String STYLE_ACTIVE =
+            "-fx-background-color: " + COLOR_ACTIVE_BG + ";" +
+            "-fx-text-fill: " + COLOR_TEXT_ACT + ";" +
+            "-fx-alignment: center-left;" +
+            "-fx-padding: 10 15;" +
+            "-fx-font-size: 12px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 0;" +
+            "-fx-border-color: #F39C12;" +
+            "-fx-border-width: 0 0 0 4;";
+
+    private static final String STYLE_HOVER =
+            "-fx-background-color: " + COLOR_HOVER_BG + ";" +
+            "-fx-text-fill: white;" +
+            "-fx-alignment: center-left;" +
+            "-fx-padding: 10 15;" +
+            "-fx-font-size: 12px;" +
+            "-fx-background-radius: 0;" +
+            "-fx-border-color: #C0392B;" +
+            "-fx-border-width: 0 0 0 4;";
 
     public DashboardView(User currentUser) {
         this.currentUser = currentUser;
-        
-        // Inisialisasi semua layar di awal
-        cashierView = new CashierView();
-        manageMenuView = new ManageMenuView();
+        cashierView     = new CashierView();
+        manageMenuView  = new ManageMenuView();
         reservationView = new ReservationView();
-        reportView = new ReportView();
-        
+        reportView      = new ReportView();
         buildUI();
     }
 
     private void buildUI() {
         root = new BorderPane();
-        
-        // Siapin kontainer tengah
+        root.setBackground(new Background(new BackgroundFill(
+                Color.web("#FDF6EC"), CornerRadii.EMPTY, Insets.EMPTY)));
+
+        // Area tengah konten
         centerContainer = new StackPane();
         centerContainer.setPadding(new Insets(20));
-        centerContainer.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(10), Insets.EMPTY)));
-        BorderPane.setMargin(centerContainer, new Insets(20, 20, 20, 0)); 
-        
-        DropShadow shadow = new DropShadow();
-        shadow.setColor(Color.color(0, 0, 0, 0.05));
-        shadow.setRadius(10);
-        centerContainer.setEffect(shadow);
-        
+        centerContainer.setBackground(new Background(new BackgroundFill(
+                Color.web("#FDF6EC"), CornerRadii.EMPTY, Insets.EMPTY)));
+        BorderPane.setMargin(centerContainer, new Insets(0, 15, 15, 0));
+
         root.setCenter(centerContainer);
-        
-        // Siapin sidebar di sebelah kiri
-        VBox sidebar = buildSidebar();
-        root.setLeft(sidebar);
-        
-        // Langsung arahkan ke halaman Kasir (POS) sebagai default startup screen
+        root.setLeft(buildSidebar());
+
         if (btnKasirRef != null) {
             btnKasirRef.fire();
         }
     }
-    
+
     private VBox buildSidebar() {
-        VBox sidebar = new VBox(10);
-        sidebar.setPadding(new Insets(20, 0, 20, 0)); // Padding horizontal dinolkan biar background-color tombol melar penuh
-        sidebar.setPrefWidth(220);
-        
-        // Background abu-abu netral & border pembatas kanan
-        sidebar.setStyle("-fx-background-color: #FAFAFA; -fx-border-color: #E0E0E0; -fx-border-width: 0 1 0 0;");
-        
+        VBox sidebar = new VBox(0);
+        sidebar.setPadding(new Insets(0));
+        sidebar.setPrefWidth(190);
+        sidebar.setBackground(new Background(new BackgroundFill(
+                Color.web(COLOR_SIDEBAR), CornerRadii.EMPTY, Insets.EMPTY)));
+
+        // ── Header Logo ──
+        VBox logoBox = new VBox(5);
+        logoBox.setPadding(new Insets(16, 14, 14, 14));
+        logoBox.setAlignment(Pos.CENTER_LEFT);
+
+        Label lblIcon = new Label("🍽️");
+        lblIcon.setFont(Font.font("Segoe UI", 22));
+
         Label logo = new Label("RestoMate");
-        logo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
-        logo.setTextFill(Color.web("#2196F3"));
-        VBox.setMargin(logo, new Insets(10, 20, 20, 20)); 
-        
-        Label userLabel = new Label("Halo, " + currentUser.getUsername() + "!");
-        userLabel.setTextFill(Color.GRAY);
-        userLabel.setFont(Font.font("Segoe UI", FontWeight.SEMI_BOLD, 13));
-        VBox.setMargin(userLabel, new Insets(0, 20, 20, 20));
-        
-        Button btnKasir = createSidebarButton("🛒 Kasir (POS)");
-        Button btnMenu = createSidebarButton("📋 Kelola Menu");
-        Button btnReservasi = createSidebarButton("📅 Reservasi Meja");
-        Button btnLaporan = createSidebarButton("📊 Laporan");
-        
-        // Spacer untuk mendorong tombol logout ke bagian bawah
+        logo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 17));
+        logo.setTextFill(Color.web("#F39C12"));
+
+        // Garis bawah logo
+        Rectangle logoLine = new Rectangle(185, 1);
+        logoLine.setFill(Color.web("#3D2512"));
+
+        logoBox.getChildren().addAll(lblIcon, logo, logoLine);
+
+        // ── Info User ──
+        VBox userBox = new VBox(3);
+        userBox.setPadding(new Insets(8, 14, 12, 14));
+
+        Label lblHalo = new Label("Halo,");
+        lblHalo.setFont(Font.font("Segoe UI", 11));
+        lblHalo.setTextFill(Color.web("#7F8C8D"));
+
+        Label lblUsername = new Label(currentUser.getUsername());
+        lblUsername.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
+        lblUsername.setTextFill(Color.web("#ECF0F1"));
+
+        Label lblRole = new Label("● Shift Aktif");
+        lblRole.setFont(Font.font("Segoe UI", 11));
+        lblRole.setTextFill(Color.web("#27AE60"));
+
+        userBox.getChildren().addAll(lblHalo, lblUsername, lblRole);
+
+        // ── Tombol Navigasi ──
+        Button btnKasir     = createSidebarButton("🛒  Kasir (POS)");
+        Button btnMenu      = createSidebarButton("📋  Kelola Menu");
+        Button btnReservasi = createSidebarButton("📅  Reservasi Meja");
+        Button btnLaporan   = createSidebarButton("📊  Laporan");
+
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
-        
-        Button btnLogout = createSidebarButton("🚪 Logout");
-        
-        // --- LOGIKA NAVIGASI ---
+
+        // ── Tombol Logout ──
+        Button btnLogout = createSidebarButton("🚪  Logout");
+
+        String logoutHover =
+                "-fx-background-color: #922B21;" +
+                "-fx-text-fill: white;" +
+                "-fx-alignment: center-left;" +
+                "-fx-padding: 10 15;" +
+                "-fx-font-size: 12px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-radius: 0;" +
+                "-fx-border-color: #E74C3C;" +
+                "-fx-border-width: 0 0 0 4;";
+
+        btnLogout.setOnMouseEntered(e -> {
+            if (btnLogout != activeButton) btnLogout.setStyle(logoutHover);
+            btnLogout.setCursor(javafx.scene.Cursor.HAND);
+        });
+        btnLogout.setOnMouseExited(e -> {
+            if (btnLogout != activeButton) btnLogout.setStyle(STYLE_NORMAL);
+        });
+
+        // ── Aksi Navigasi ──
         btnKasir.setOnAction(e -> {
             setActiveButton(btnKasir);
             cashierView.getController().refresh();
@@ -129,74 +196,50 @@ public class DashboardView {
             reportView.getController().refresh();
             setCenterContent(reportView.getView());
         });
-        // -----------------------
-        
-        // Custom Hover khusus Logout (Warna merah transparan)
-        btnLogout.setOnMouseEntered(e -> {
-            btnLogout.setStyle("-fx-background-color: #FFEBEE; -fx-text-fill: #D32F2F; -fx-alignment: center-left; -fx-padding: 12 20; -fx-font-size: 14px; -fx-border-color: #FFCDD2; -fx-border-width: 0 0 0 4; -fx-border-style: solid; -fx-background-radius: 0; -fx-font-weight: bold;");
-            btnLogout.setCursor(javafx.scene.Cursor.HAND);
-        });
-        btnLogout.setOnMouseExited(e -> {
-            if (btnLogout != activeButton) {
-                btnLogout.setStyle(STYLE_NORMAL);
-            }
-        });
-        
         btnLogout.setOnAction(e -> {
-            System.out.println("User " + currentUser.getUsername() + " pamit logout.");
-            
-            // Hentikan background polling reservasi saat logout
             if (reservationView.getController() != null) {
                 reservationView.getController().stopPolling();
             }
-            
             Main.setRoot(new LoginView().getView());
         });
-        
-        sidebar.getChildren().addAll(logo, userLabel, btnKasir, btnMenu, btnReservasi, btnLaporan, spacer, btnLogout);
-        
-        // Simpan referensi ke tombol kasir
+
         this.btnKasirRef = btnKasir;
-        
+
+        sidebar.getChildren().addAll(
+                logoBox, userBox,
+                btnKasir, btnMenu, btnReservasi, btnLaporan,
+                spacer, btnLogout);
+
         return sidebar;
     }
-    
+
     private void setActiveButton(Button btn) {
-        if (activeButton != null) {
-            activeButton.setStyle(STYLE_NORMAL);
-        }
+        if (activeButton != null) activeButton.setStyle(STYLE_NORMAL);
         activeButton = btn;
-        if (activeButton != null) {
-            activeButton.setStyle(STYLE_ACTIVE);
-        }
+        if (activeButton != null) activeButton.setStyle(STYLE_ACTIVE);
     }
-    
+
     private void setCenterContent(Node node) {
-        centerContainer.getChildren().clear();
-        centerContainer.getChildren().add(node);
+        centerContainer.getChildren().setAll(node);
     }
-    
+
     private Button createSidebarButton(String text) {
         Button btn = new Button(text);
-        btn.setMaxWidth(Double.MAX_VALUE); 
+        btn.setMaxWidth(Double.MAX_VALUE);
         btn.setStyle(STYLE_NORMAL);
         btn.setFont(Font.font("Segoe UI", 14));
-        
         btn.setOnMouseEntered(e -> {
             if (btn != activeButton) {
-                btn.setStyle(STYLE_HOVER_BLUE);
+                btn.setStyle(STYLE_HOVER);
                 btn.setCursor(javafx.scene.Cursor.HAND);
             }
         });
         btn.setOnMouseExited(e -> {
-            if (btn != activeButton) {
-                btn.setStyle(STYLE_NORMAL);
-            }
+            if (btn != activeButton) btn.setStyle(STYLE_NORMAL);
         });
-        
         return btn;
     }
-    
+
     public BorderPane getView() {
         return root;
     }
