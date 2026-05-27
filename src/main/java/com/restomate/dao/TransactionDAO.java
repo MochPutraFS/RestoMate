@@ -179,4 +179,41 @@ public class TransactionDAO {
         }
         return list;
     }
+
+    // Mengambil seluruh riwayat transaksi dalam rentang tanggal tertentu
+    public List<Transaction> getTransactionsRange(String startDate, String endDate) {
+        List<Transaction> list = new java.util.ArrayList<>();
+        String query = "SELECT * FROM transactions WHERE DATE(created_at) >= ? AND DATE(created_at) <= ? ORDER BY created_at DESC";
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, startDate);
+            stmt.setString(2, endDate);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    java.time.LocalDateTime time = null;
+                    String timeStr = rs.getString("created_at");
+                    if (timeStr != null) {
+                        try {
+                            time = java.time.LocalDateTime.parse(timeStr, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        } catch (Exception e) {
+                            try {
+                                time = java.time.LocalDateTime.parse(timeStr, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                            } catch (Exception ignore) {}
+                        }
+                    }
+                    Transaction t = new Transaction(
+                        rs.getInt("id"),
+                        rs.getDouble("total"),
+                        rs.getString("metode_pembayaran"),
+                        rs.getString("catatan"),
+                        time
+                    );
+                    list.add(t);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Gagal ngambil transaksi rentang tanggal: " + e.getMessage());
+        }
+        return list;
+    }
 }
