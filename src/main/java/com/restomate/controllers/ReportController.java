@@ -76,6 +76,18 @@ public class ReportController {
         });
         colWaktu.setPrefWidth(150);
         
+        TableColumn<Transaction, String> colPelanggan = new TableColumn<>("Pelanggan");
+        colPelanggan.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNamaPelanggan() != null ? data.getValue().getNamaPelanggan() : "-"));
+        colPelanggan.setPrefWidth(120);
+        
+        TableColumn<Transaction, String> colAntrian = new TableColumn<>("Antrian");
+        colAntrian.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNomorAntrian() != null ? data.getValue().getNomorAntrian() : "-"));
+        colAntrian.setPrefWidth(80);
+        
+        TableColumn<Transaction, String> colTipe = new TableColumn<>("Tipe");
+        colTipe.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTipePesanan() != null ? data.getValue().getTipePesanan() : "-"));
+        colTipe.setPrefWidth(120);
+        
         TableColumn<Transaction, String> colMetode = new TableColumn<>("Metode");
         colMetode.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getMetodePembayaran()));
         colMetode.setPrefWidth(90);
@@ -88,7 +100,7 @@ public class ReportController {
         colTotal.setCellValueFactory(data -> new SimpleStringProperty("Rp " + numFormatter.format(data.getValue().getTotal())));
         colTotal.setPrefWidth(120);
         
-        table.getColumns().addAll(colId, colWaktu, colMetode, colCatatan, colTotal);
+        table.getColumns().addAll(colId, colWaktu, colPelanggan, colAntrian, colTipe, colMetode, colCatatan, colTotal);
         table.setItems(txList);
     }
 
@@ -217,17 +229,23 @@ public class ReportController {
                 writer.write("-----------------------------------------\n");
                 writer.write("Jml Transaksi  : " + currentTxCount + " struk\n");
                 writer.write("Rata-rata (AOV): Rp " + numFormatter.format(currentAov) + "\n");
-                writer.write("=========================================\n");
-                writer.write("           DAFTAR TRANSAKSI              \n");
-                writer.write("=========================================\n");
-                writer.write(String.format("%-4s | %-19s | %-6s | %-12s\n", "ID", "Waktu/Tanggal", "Metode", "Total"));
-                writer.write("-----------------------------------------\n");
+                writer.write("=========================================================================================\n");
+                writer.write("                                     DAFTAR TRANSAKSI                                    \n");
+                writer.write("=========================================================================================\n");
+                writer.write(String.format("%-4s | %-19s | %-15s | %-8s | %-15s | %-6s | %-12s\n", "ID", "Waktu/Tanggal", "Pelanggan", "Antrian", "Tipe", "Metode", "Total"));
+                writer.write("-----------------------------------------------------------------------------------------\n");
                 for (Transaction t : txList) {
                     String time = t.getCreatedAt() != null ? t.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "-";
-                    writer.write(String.format("%-4d | %-19s | %-6s | Rp %s\n", 
-                        t.getId(), time, t.getMetodePembayaran(), numFormatter.format(t.getTotal())));
+                    String pelanggan = t.getNamaPelanggan() != null ? t.getNamaPelanggan() : "-";
+                    if (pelanggan.length() > 15) pelanggan = pelanggan.substring(0, 12) + "...";
+                    String antrian = t.getNomorAntrian() != null ? t.getNomorAntrian() : "-";
+                    if (antrian.length() > 8) antrian = antrian.substring(0, 5) + "...";
+                    String tipe = t.getTipePesanan() != null ? t.getTipePesanan() : "-";
+                    if (tipe.length() > 15) tipe = tipe.substring(0, 12) + "...";
+                    writer.write(String.format("%-4d | %-19s | %-15s | %-8s | %-15s | %-6s | Rp %s\n", 
+                        t.getId(), time, pelanggan, antrian, tipe, t.getMetodePembayaran(), numFormatter.format(t.getTotal())));
                 }
-                writer.write("=========================================\n");
+                writer.write("=========================================================================================\n");
                 writer.write("Terima kasih atas kerja keras hari ini!\n");
                 
                 showAlert(Alert.AlertType.INFORMATION, "Ekspor Sukses", "File laporan tercetak di: " + fileName);

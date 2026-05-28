@@ -18,6 +18,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -35,6 +36,8 @@ public class CashierController {
     private TransactionDAO transactionDAO;
     private ObservableList<CartItem> cartItems; 
     private ObservableList<MenuRestoran> menuItems;
+    private List<HoldSession> holdSessions;
+    private double currentGrandTotal = 0;
 
     public CashierController(CashierView view) {
         this.view = view;
@@ -42,6 +45,7 @@ public class CashierController {
         this.transactionDAO = new TransactionDAO();
         this.cartItems = FXCollections.observableArrayList();
         this.menuItems = FXCollections.observableArrayList();
+        this.holdSessions = new ArrayList<>();
         
         setupCartTable();
         setupMenuTable();
@@ -50,6 +54,7 @@ public class CashierController {
         
         loadMenus();
         setupActions();
+        generateNextQueueNumber();
     }
 
     private void setupCartTable() {
@@ -57,11 +62,64 @@ public class CashierController {
         
         TableColumn<CartItem, String> colName = new TableColumn<>("Item");
         colName.setCellValueFactory(data -> data.getValue().namaProperty());
-        colName.setPrefWidth(120);
+        colName.setPrefWidth(130);
         
-        TableColumn<CartItem, Number> colQty = new TableColumn<>("Qty");
-        colQty.setCellValueFactory(data -> data.getValue().qtyProperty());
-        colQty.setPrefWidth(45);
+        TableColumn<CartItem, CartItem> colQty = new TableColumn<>("Qty");
+        colQty.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue()));
+        colQty.setCellFactory(column -> new TableCell<CartItem, CartItem>() {
+            private final Button btnMinus = new Button("-");
+            private final Button btnPlus = new Button("+");
+            private final Label lblQty = new Label();
+            private final HBox container = new HBox(6, btnMinus, lblQty, btnPlus);
+            
+            {
+                container.setAlignment(Pos.CENTER);
+                btnMinus.setStyle("-fx-background-color: #E0E0E0; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-size: 10px;");
+                btnMinus.setOnMouseEntered(e -> btnMinus.setStyle("-fx-background-color: #BDBDBD; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-size: 10px; -fx-cursor: hand;"));
+                btnMinus.setOnMouseExited(e -> btnMinus.setStyle("-fx-background-color: #E0E0E0; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-size: 10px;"));
+
+                btnPlus.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 5; -fx-font-size: 10px;");
+                btnPlus.setOnMouseEntered(e -> btnPlus.setStyle("-fx-background-color: #1976D2; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 5; -fx-font-size: 10px; -fx-cursor: hand;"));
+                btnPlus.setOnMouseExited(e -> btnPlus.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 5; -fx-font-size: 10px;"));
+            }
+
+            @Override
+            protected void updateItem(CartItem item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    lblQty.setText(String.valueOf(item.getQty()));
+                    
+                    btnMinus.setOnAction(e -> {
+                        if (item.getQty() > 1) {
+                            item.setQty(item.getQty() - 1);
+                            item.setSubtotal(item.getQty() * item.getHargaSatuan());
+                            updateTotal();
+                            view.getCartTable().refresh();
+                        } else {
+                            cartItems.remove(item);
+                            updateTotal();
+                        }
+                    });
+                    
+                    btnPlus.setOnAction(e -> {
+                        int stokLimit = getMenuStock(item.getMenuId());
+                        if (item.getQty() < stokLimit) {
+                            item.setQty(item.getQty() + 1);
+                            item.setSubtotal(item.getQty() * item.getHargaSatuan());
+                            updateTotal();
+                            view.getCartTable().refresh();
+                        } else {
+                            showAlert(Alert.AlertType.WARNING, "Stok Habis", "Udah gak bisa nambah lagi, stok tinggal " + stokLimit);
+                        }
+                    });
+                    
+                    setGraphic(container);
+                }
+            }
+        });
+        colQty.setPrefWidth(95);
         colQty.setStyle("-fx-alignment: CENTER;");
         
         TableColumn<CartItem, String> colSubtotal = new TableColumn<>("Subtotal");
@@ -69,7 +127,7 @@ public class CashierController {
             java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
             return new SimpleStringProperty("Rp " + formatter.format(data.getValue().getSubtotal()));
         });
-        colSubtotal.setPrefWidth(95);
+        colSubtotal.setPrefWidth(90);
 
         TableColumn<CartItem, CartItem> colAksi = new TableColumn<>("Aksi");
         colAksi.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue()));
@@ -94,7 +152,7 @@ public class CashierController {
                 }
             }
         });
-        colAksi.setPrefWidth(50);
+        colAksi.setPrefWidth(40);
         colAksi.setStyle("-fx-alignment: CENTER;");
         
         table.getColumns().addAll(colName, colQty, colSubtotal, colAksi);
@@ -117,6 +175,12 @@ public class CashierController {
         // Listener Metode Pembayaran
         view.getCmbPayment().setOnAction(e -> {
             updateTotal();
+            boolean isQris = "QRIS".equalsIgnoreCase(view.getCmbPayment().getValue());
+            view.getBtnPas().setDisable(isQris);
+            view.getBtn10k().setDisable(isQris);
+            view.getBtn20k().setDisable(isQris);
+            view.getBtn50k().setDisable(isQris);
+            view.getBtn100k().setDisable(isQris);
         });
     }
     
@@ -135,6 +199,29 @@ public class CashierController {
 
     public void refresh() {
         loadMenus();
+        if (cartItems.isEmpty()) {
+            generateNextQueueNumber();
+        }
+    }
+
+    private void generateNextQueueNumber() {
+        try {
+            int countToday = transactionDAO.getTodayTransactionCount();
+            int nextQueue = countToday + 1;
+            view.getTxtNomorAntrian().setText(String.valueOf(nextQueue));
+        } catch (Exception e) {
+            view.getTxtNomorAntrian().setText("1");
+        }
+    }
+
+    private int getMenuStock(int menuId) {
+        List<MenuRestoran> menus = menuDAO.getAllMenus();
+        for (MenuRestoran m : menus) {
+            if (m.getId() == menuId) {
+                return m.getStok();
+            }
+        }
+        return 0;
     }
 
     private void setupMenuTable() {
@@ -288,6 +375,7 @@ public class CashierController {
         
         // Grand Total
         double grandTotal = taxableAmount + taxAmount;
+        this.currentGrandTotal = grandTotal;
         
         java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
         
@@ -339,10 +427,24 @@ public class CashierController {
             cartItems.clear();
             view.getTxtCatatan().clear();
             view.getTxtAmountPaid().clear();
+            view.getTxtNamaPelanggan().clear();
+            generateNextQueueNumber();
+            view.getCmbOrderType().setValue("DINE IN");
             view.getCmbDiscount().setValue("0%");
             view.getCmbPayment().setValue("CASH");
             updateTotal();
         });
+
+        // Quick Cash Buttons
+        view.getBtnPas().setOnAction(e -> handleQuickCash(-1));
+        view.getBtn10k().setOnAction(e -> handleQuickCash(10000));
+        view.getBtn20k().setOnAction(e -> handleQuickCash(20000));
+        view.getBtn50k().setOnAction(e -> handleQuickCash(50000));
+        view.getBtn100k().setOnAction(e -> handleQuickCash(100000));
+
+        // Hold & Recall
+        view.getBtnHold().setOnAction(e -> handleHold());
+        view.getBtnRecall().setOnAction(e -> handleRecall());
         
         // Logika Bayar
         view.getBtnPay().setOnAction(e -> {
@@ -402,6 +504,9 @@ public class CashierController {
             }
             
             Transaction tx = new Transaction(0, grandTotal, view.getCmbPayment().getValue(), notesBuilder.toString(), LocalDateTime.now());
+            tx.setNamaPelanggan(view.getTxtNamaPelanggan().getText().trim());
+            tx.setNomorAntrian(view.getTxtNomorAntrian().getText().trim());
+            tx.setTipePesanan(view.getCmbOrderType().getValue());
             
             boolean success = transactionDAO.saveTransaction(tx, dbItems);
             if (success) {
@@ -426,6 +531,9 @@ public class CashierController {
                 view.getCmbFilter().setValue("SEMUA");
                 view.getTxtCatatan().clear();
                 view.getTxtAmountPaid().clear();
+                view.getTxtNamaPelanggan().clear();
+                generateNextQueueNumber();
+                view.getCmbOrderType().setValue("DINE IN");
                 view.getCmbDiscount().setValue("0%");
                 view.getCmbPayment().setValue("CASH");
                 updateTotal();
@@ -467,12 +575,23 @@ public class CashierController {
         java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
         
+        String namaPelanggan = view.getTxtNamaPelanggan().getText().trim();
+        String nomorAntrian = view.getTxtNomorAntrian().getText().trim();
+        String tipePesanan = view.getCmbOrderType().getValue();
+
         StringBuilder sb = new StringBuilder();
         sb.append("================================\n");
         sb.append("           RESTOMATE            \n");
         sb.append("================================\n");
         sb.append("Tanggal : ").append(LocalDateTime.now().format(dtf)).append("\n");
         sb.append("Kasir   : admin\n");
+        if (!namaPelanggan.isEmpty()) {
+            sb.append("Plg     : ").append(namaPelanggan).append("\n");
+        }
+        if (!nomorAntrian.isEmpty()) {
+            sb.append("Antrian : ").append(nomorAntrian).append("\n");
+        }
+        sb.append("Tipe    : ").append(tipePesanan).append("\n");
         sb.append("--------------------------------\n");
         
         for (CartItem ci : cartItems) {
@@ -548,18 +667,131 @@ public class CashierController {
         alert.showAndWait();
     }
 
+    private void handleQuickCash(double amount) {
+        if ("QRIS".equalsIgnoreCase(view.getCmbPayment().getValue())) {
+            return;
+        }
+        if (amount == -1) {
+            view.getTxtAmountPaid().setText(String.valueOf((int) Math.ceil(currentGrandTotal)));
+        } else {
+            view.getTxtAmountPaid().setText(String.valueOf((int) amount));
+        }
+        updateTotal();
+    }
+
+    private void handleHold() {
+        if (cartItems.isEmpty()) {
+            showAlert(Alert.AlertType.WARNING, "Tangguhkan Pesanan", "Keranjang kosong! Tidak ada pesanan untuk ditangguhkan.");
+            return;
+        }
+        
+        HoldSession session = new HoldSession(
+            view.getTxtNamaPelanggan().getText().trim(),
+            view.getTxtNomorAntrian().getText().trim(),
+            view.getCmbOrderType().getValue(),
+            view.getCmbDiscount().getValue(),
+            view.getTxtCatatan().getText().trim(),
+            view.getCmbPayment().getValue(),
+            view.getTxtAmountPaid().getText().trim(),
+            cartItems
+        );
+        
+        holdSessions.add(session);
+        updateRecallCount();
+        
+        // Reset Cashier screen state for next customer
+        cartItems.clear();
+        view.getTxtCatatan().clear();
+        view.getTxtAmountPaid().clear();
+        view.getTxtNamaPelanggan().clear();
+        generateNextQueueNumber();
+        view.getCmbOrderType().setValue("DINE IN");
+        view.getCmbDiscount().setValue("0%");
+        view.getCmbPayment().setValue("CASH");
+        updateTotal();
+        
+        showAlert(Alert.AlertType.INFORMATION, "Sukses", "Pesanan berhasil ditangguhkan.");
+    }
+
+    private void handleRecall() {
+        if (holdSessions.isEmpty()) {
+            showAlert(Alert.AlertType.INFORMATION, "Recall Pesanan", "Tidak ada pesanan yang ditangguhkan saat ini.");
+            return;
+        }
+
+        Dialog<HoldSession> dialog = new Dialog<>();
+        dialog.setTitle("Recall Pesanan");
+        dialog.setHeaderText("Pilih pesanan yang ingin dimuat kembali:");
+
+        ButtonType btnSelect = new ButtonType("Pilih", ButtonBar.ButtonData.OK_DONE);
+        ButtonType btnCancel = new ButtonType("Batal", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(btnSelect, btnCancel);
+
+        ListView<HoldSession> listView = new ListView<>();
+        listView.setItems(FXCollections.observableArrayList(holdSessions));
+        listView.setCellFactory(param -> new ListCell<HoldSession>() {
+            @Override
+            protected void updateItem(HoldSession session, boolean empty) {
+                super.updateItem(session, empty);
+                if (empty || session == null) {
+                    setText(null);
+                } else {
+                    java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
+                    double total = 0;
+                    for (CartItem ci : session.getCartItems()) {
+                        total += ci.getSubtotal();
+                    }
+                    String timeStr = session.getTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    String plg = session.getCustomerName().isEmpty() ? "-" : session.getCustomerName();
+                    String antrian = session.getQueueNumber().isEmpty() ? "-" : session.getQueueNumber();
+                    setText(String.format("[%s] Antrian: %s | Pelanggan: %s | Total: Rp %s (%s)", 
+                        timeStr, antrian, plg, formatter.format(total), session.getOrderType()));
+                }
+            }
+        });
+        
+        dialog.getDialogPane().setContent(listView);
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == btnSelect) {
+                return listView.getSelectionModel().getSelectedItem();
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(selectedSession -> {
+            cartItems.setAll(selectedSession.getCartItems());
+            view.getTxtNamaPelanggan().setText(selectedSession.getCustomerName());
+            view.getTxtNomorAntrian().setText(selectedSession.getQueueNumber());
+            view.getCmbOrderType().setValue(selectedSession.getOrderType());
+            view.getCmbDiscount().setValue(selectedSession.getDiscount());
+            view.getTxtCatatan().setText(selectedSession.getNotes());
+            view.getCmbPayment().setValue(selectedSession.getPaymentMethod());
+            view.getTxtAmountPaid().setText(selectedSession.getAmountPaid());
+            
+            holdSessions.remove(selectedSession);
+            updateTotal();
+            updateRecallCount();
+        });
+    }
+
+    private void updateRecallCount() {
+        view.getBtnRecall().setText("📤 Recall (" + holdSessions.size() + ")");
+    }
+
     // Kelas dummy untuk di-bind ke JavaFX TableView
     public static class CartItem {
         private final SimpleIntegerProperty menuId;
         private final SimpleStringProperty nama;
         private final SimpleIntegerProperty qty;
         private final SimpleDoubleProperty subtotal;
+        private final double hargaSatuan;
 
         public CartItem(int menuId, String nama, int qty, double subtotal) {
             this.menuId = new SimpleIntegerProperty(menuId);
             this.nama = new SimpleStringProperty(nama);
             this.qty = new SimpleIntegerProperty(qty);
             this.subtotal = new SimpleDoubleProperty(subtotal);
+            this.hargaSatuan = subtotal / qty;
         }
 
         public int getMenuId() { return menuId.get(); }
@@ -567,9 +799,44 @@ public class CashierController {
         public void setQty(int value) { qty.set(value); }
         public double getSubtotal() { return subtotal.get(); }
         public void setSubtotal(double value) { subtotal.set(value); }
+        public double getHargaSatuan() { return hargaSatuan; }
         
         public SimpleStringProperty namaProperty() { return nama; }
         public SimpleIntegerProperty qtyProperty() { return qty; }
         public SimpleDoubleProperty subtotalProperty() { return subtotal; }
+    }
+
+    public static class HoldSession {
+        private final String customerName;
+        private final String queueNumber;
+        private final String orderType;
+        private final String discount;
+        private final String notes;
+        private final String paymentMethod;
+        private final String amountPaid;
+        private final List<CartItem> cartItems;
+        private final LocalDateTime time;
+
+        public HoldSession(String customerName, String queueNumber, String orderType, String discount, String notes, String paymentMethod, String amountPaid, List<CartItem> cartItems) {
+            this.customerName = customerName;
+            this.queueNumber = queueNumber;
+            this.orderType = orderType;
+            this.discount = discount;
+            this.notes = notes;
+            this.paymentMethod = paymentMethod;
+            this.amountPaid = amountPaid;
+            this.cartItems = new ArrayList<>(cartItems);
+            this.time = LocalDateTime.now();
+        }
+
+        public String getCustomerName() { return customerName; }
+        public String getQueueNumber() { return queueNumber; }
+        public String getOrderType() { return orderType; }
+        public String getDiscount() { return discount; }
+        public String getNotes() { return notes; }
+        public String getPaymentMethod() { return paymentMethod; }
+        public String getAmountPaid() { return amountPaid; }
+        public List<CartItem> getCartItems() { return cartItems; }
+        public LocalDateTime getTime() { return time; }
     }
 }

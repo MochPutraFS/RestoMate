@@ -33,4 +33,18 @@ public class Transaction {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    private String namaPelanggan;
+    private String nomorAntrian;
+
+    public String getNamaPelanggan() { return namaPelanggan; }
+    public void setNamaPelanggan(String namaPelanggan) { this.namaPelanggan = namaPelanggan; }
+
+    public String getNomorAntrian() { return nomorAntrian; }
+    public void setNomorAntrian(String nomorAntrian) { this.nomorAntrian = nomorAntrian; }
+
+    private String tipePesanan;
+
+    public String getTipePesanan() { return tipePesanan; }
+    public void setTipePesanan(String tipePesanan) { this.tipePesanan = tipePesanan; }
 }

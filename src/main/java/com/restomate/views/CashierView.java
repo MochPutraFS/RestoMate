@@ -32,6 +32,16 @@ public class CashierView {
     private Label lblSubtotal;
     private Label lblDiscountAmount;
     private Label lblTaxAmount;
+    private TextField txtNamaPelanggan;
+    private TextField txtNomorAntrian;
+    private ComboBox<String> cmbOrderType;
+    private Button btnHold;
+    private Button btnRecall;
+    private Button btnPas;
+    private Button btn10k;
+    private Button btn20k;
+    private Button btn50k;
+    private Button btn100k;
 
     // ── Warna Tema Restoran ──
     private static final String CLR_PRIMARY   = "#C0392B"; // Merah marun
@@ -130,7 +140,7 @@ public class CashierView {
     private VBox buildCartSidebar() {
         VBox sidebar = new VBox(10);
         sidebar.setPadding(new Insets(10));
-        sidebar.setPrefWidth(310);
+        sidebar.setPrefWidth(380);
         sidebar.setBackground(new Background(new BackgroundFill(
                 Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
         sidebar.setStyle(
@@ -152,23 +162,74 @@ public class CashierView {
         cartTable.setPrefHeight(200);
         VBox.setVgrow(cartTable, Priority.ALWAYS);
 
-        // Tombol Clear Cart
-        btnClearCart = new Button("🧹 Bersihkan Keranjang (ESC)");
-        btnClearCart.setMaxWidth(Double.MAX_VALUE);
-        String clearNormal =
-                "-fx-background-color: #FDEDEC; -fx-text-fill: " + CLR_DANGER + ";" +
-                "-fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8;";
-        String clearHover =
-                "-fx-background-color: " + CLR_DANGER + "; -fx-text-fill: white;" +
-                "-fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8; -fx-cursor: hand;";
+        // Tombol Clear Cart, Hold, dan Recall
+        btnClearCart = new Button("🧹 Bersihkan");
+        btnHold = new Button("📥 Hold");
+        btnRecall = new Button("📤 Recall (0)");
+        
+        String clearNormal = "-fx-background-color: #FDEDEC; -fx-text-fill: " + CLR_DANGER + "; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 4; -fx-font-size: 11px; -fx-cursor: hand;";
+        String clearHover  = "-fx-background-color: " + CLR_DANGER + "; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 4; -fx-font-size: 11px; -fx-cursor: hand;";
         btnClearCart.setStyle(clearNormal);
         btnClearCart.setOnMouseEntered(e -> btnClearCart.setStyle(clearHover));
         btnClearCart.setOnMouseExited(e -> btnClearCart.setStyle(clearNormal));
 
-        // Grid diskon & catatan
+        String holdNormal = "-fx-background-color: #FEF9E7; -fx-text-fill: #D4AC0D; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 4; -fx-font-size: 11px; -fx-cursor: hand;";
+        String holdHover  = "-fx-background-color: #F9E79F; -fx-text-fill: #B7950B; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 4; -fx-font-size: 11px; -fx-cursor: hand;";
+        btnHold.setStyle(holdNormal);
+        btnHold.setOnMouseEntered(e -> btnHold.setStyle(holdHover));
+        btnHold.setOnMouseExited(e -> btnHold.setStyle(holdNormal));
+
+        String recallNormal = "-fx-background-color: #EBF5FB; -fx-text-fill: #2980B9; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 4; -fx-font-size: 11px; -fx-cursor: hand;";
+        String recallHover  = "-fx-background-color: #AED6F1; -fx-text-fill: #1A5276; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 4; -fx-font-size: 11px; -fx-cursor: hand;";
+        btnRecall.setStyle(recallNormal);
+        btnRecall.setOnMouseEntered(e -> btnRecall.setStyle(recallHover));
+        btnRecall.setOnMouseExited(e -> btnRecall.setStyle(recallNormal));
+
+        HBox cartActions = new HBox(6, btnClearCart, btnHold, btnRecall);
+        cartActions.setAlignment(Pos.CENTER);
+        HBox.setHgrow(btnClearCart, Priority.ALWAYS);
+        HBox.setHgrow(btnHold, Priority.ALWAYS);
+        HBox.setHgrow(btnRecall, Priority.ALWAYS);
+        btnClearCart.setMaxWidth(Double.MAX_VALUE);
+        btnHold.setMaxWidth(Double.MAX_VALUE);
+        btnRecall.setMaxWidth(Double.MAX_VALUE);
+
+        // Grid diskon & catatan & pelanggan
         GridPane detailsGrid = new GridPane();
         detailsGrid.setVgap(8);
         detailsGrid.setHgap(10);
+
+        Label lblNamaPelanggan = new Label("Pelanggan:");
+        lblNamaPelanggan.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
+        lblNamaPelanggan.setTextFill(Color.web("#555555"));
+
+        txtNamaPelanggan = new TextField();
+        txtNamaPelanggan.setPromptText("Nama pelanggan...");
+        txtNamaPelanggan.setStyle(
+                "-fx-font-size: 12px; -fx-padding: 6px;" +
+                "-fx-background-radius: 6; -fx-border-radius: 6;" +
+                "-fx-border-color: " + CLR_BORDER + ";");
+
+        Label lblNomorAntrian = new Label("Antrian #:");
+        lblNomorAntrian.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
+        lblNomorAntrian.setTextFill(Color.web("#555555"));
+
+        txtNomorAntrian = new TextField();
+        txtNomorAntrian.setPromptText("Nomor antrian...");
+        txtNomorAntrian.setStyle(
+                "-fx-font-size: 12px; -fx-padding: 6px;" +
+                "-fx-background-radius: 6; -fx-border-radius: 6;" +
+                "-fx-border-color: " + CLR_BORDER + ";");
+
+        Label lblOrderType = new Label("Tipe:");
+        lblOrderType.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
+        lblOrderType.setTextFill(Color.web("#555555"));
+
+        cmbOrderType = new ComboBox<>();
+        cmbOrderType.getItems().addAll("DINE IN", "TAKE AWAY");
+        cmbOrderType.setValue("DINE IN");
+        cmbOrderType.setMaxWidth(Double.MAX_VALUE);
+        GridPane.setHgrow(cmbOrderType, Priority.ALWAYS);
 
         Label lblDiscTitle = new Label("Diskon:");
         lblDiscTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
@@ -191,10 +252,16 @@ public class CashierView {
                 "-fx-background-radius: 6; -fx-border-radius: 6;" +
                 "-fx-border-color: " + CLR_BORDER + ";");
 
-        detailsGrid.add(lblDiscTitle, 0, 0);
-        detailsGrid.add(cmbDiscount,  1, 0);
-        detailsGrid.add(lblCatatan,   0, 1);
-        detailsGrid.add(txtCatatan,   1, 1);
+        detailsGrid.add(lblNamaPelanggan, 0, 0);
+        detailsGrid.add(txtNamaPelanggan, 1, 0);
+        detailsGrid.add(lblNomorAntrian,  0, 1);
+        detailsGrid.add(txtNomorAntrian,  1, 1);
+        detailsGrid.add(lblOrderType,     0, 2);
+        detailsGrid.add(cmbOrderType,     1, 2);
+        detailsGrid.add(lblDiscTitle,     0, 3);
+        detailsGrid.add(cmbDiscount,      1, 3);
+        detailsGrid.add(lblCatatan,       0, 4);
+        detailsGrid.add(txtCatatan,       1, 4);
 
         // Grid metode pembayaran
         GridPane paymentGrid = new GridPane();
@@ -223,10 +290,27 @@ public class CashierView {
                 "-fx-border-color: " + CLR_BORDER + ";");
         GridPane.setHgrow(txtAmountPaid, Priority.ALWAYS);
 
+        btnPas = new Button("Pas");
+        btn10k = new Button("10k");
+        btn20k = new Button("20k");
+        btn50k = new Button("50k");
+        btn100k = new Button("100k");
+
+        String quickCashStyle = "-fx-background-color: #E8DDD0; -fx-text-fill: #2C1A0E; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 4 6; -fx-cursor: hand;";
+        btnPas.setStyle(quickCashStyle);
+        btn10k.setStyle(quickCashStyle);
+        btn20k.setStyle(quickCashStyle);
+        btn50k.setStyle(quickCashStyle);
+        btn100k.setStyle(quickCashStyle);
+
+        HBox quickCashBox = new HBox(4, btnPas, btn10k, btn20k, btn50k, btn100k);
+        quickCashBox.setAlignment(Pos.CENTER_LEFT);
+
         paymentGrid.add(lblPayMethod,  0, 0);
         paymentGrid.add(cmbPayment,    1, 0);
         paymentGrid.add(lblAmountPaid, 0, 1);
         paymentGrid.add(txtAmountPaid, 1, 1);
+        paymentGrid.add(quickCashBox,  1, 2);
 
         // Rincian biaya
         VBox costBox = new VBox(6);
@@ -269,7 +353,7 @@ public class CashierView {
         btnPay.setOnMouseExited(e -> btnPay.setStyle(payNormal));
 
         sidebar.getChildren().addAll(
-                cartHeader, cartTable, btnClearCart,
+                cartHeader, cartTable, cartActions,
                 new Separator(), detailsGrid,
                 new Separator(), paymentGrid,
                 costBox, btnPay);
@@ -312,5 +396,15 @@ public class CashierView {
     public Label getLblSubtotal()                            { return lblSubtotal; }
     public Label getLblDiscountAmount()                      { return lblDiscountAmount; }
     public Label getLblTaxAmount()                           { return lblTaxAmount; }
+    public TextField getTxtNamaPelanggan()                  { return txtNamaPelanggan; }
+    public TextField getTxtNomorAntrian()                    { return txtNomorAntrian; }
+    public ComboBox<String> getCmbOrderType()                { return cmbOrderType; }
+    public Button getBtnHold()                               { return btnHold; }
+    public Button getBtnRecall()                             { return btnRecall; }
+    public Button getBtnPas()                                { return btnPas; }
+    public Button getBtn10k()                                { return btn10k; }
+    public Button getBtn20k()                                { return btn20k; }
+    public Button getBtn50k()                                { return btn50k; }
+    public Button getBtn100k()                               { return btn100k; }
     public CashierController getController()                 { return controller; }
 }

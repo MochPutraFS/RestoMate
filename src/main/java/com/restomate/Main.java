@@ -22,7 +22,7 @@ public class Main extends Application {
         // Mulai dari halaman Login
         LoginView loginView = new LoginView();
 
-        mainScene = new Scene(loginView.getView(), 900, 620);
+        mainScene = new Scene(loginView.getView(), 1024, 700);
 
         // Tema font global — background diatur per halaman
         mainScene.getRoot().setStyle(
@@ -30,8 +30,8 @@ public class Main extends Application {
 
         primaryStage.setTitle("RestoMate - Restaurant Management System");
         primaryStage.setScene(mainScene);
-        primaryStage.setMinWidth(800);
-        primaryStage.setMinHeight(580);
+        primaryStage.setMinWidth(960);
+        primaryStage.setMinHeight(640);
         primaryStage.show();
     }
 

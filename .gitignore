@@ -41,5 +41,6 @@ Laporan_RestoMate_*.txt
 ehthumbs.db
 Thumbs.db
 
-#optional
-.jpg
+#opsional
+*.jpg
+*.txt

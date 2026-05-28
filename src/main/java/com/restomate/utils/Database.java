@@ -44,11 +44,26 @@ public class Database {
                     "total REAL NOT NULL, " +
                     "metode_pembayaran TEXT NOT NULL, " +
                     "catatan TEXT, " +
+                    "nama_pelanggan TEXT, " +
+                    "nomor_antrian TEXT, " +
+                    "tipe_pesanan TEXT DEFAULT 'DINE IN', " +
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
                     ");");
                     
             try {
                 stmt.execute("ALTER TABLE transactions ADD COLUMN catatan TEXT;");
+            } catch (SQLException ignore) { }
+
+            try {
+                stmt.execute("ALTER TABLE transactions ADD COLUMN nama_pelanggan TEXT;");
+            } catch (SQLException ignore) { }
+
+            try {
+                stmt.execute("ALTER TABLE transactions ADD COLUMN nomor_antrian TEXT;");
+            } catch (SQLException ignore) { }
+
+            try {
+                stmt.execute("ALTER TABLE transactions ADD COLUMN tipe_pesanan TEXT DEFAULT 'DINE IN';");
             } catch (SQLException ignore) { }
 
             stmt.execute("CREATE TABLE IF NOT EXISTS transaction_items (" +

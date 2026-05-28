@@ -16,7 +16,7 @@ public class TransactionDAO {
     // Menyimpan transaksi utama beserta rincian belanjaannya. 
     // Kita pake transaction database beneran (commit & rollback) biar kalo ada error di tengah jalan, datanya gak setengah-setengah masuknya.
     public boolean saveTransaction(Transaction transaction, List<TransactionItem> items) {
-        String queryTx = "INSERT INTO transactions (total, metode_pembayaran, catatan) VALUES (?, ?, ?)";
+        String queryTx = "INSERT INTO transactions (total, metode_pembayaran, catatan, nama_pelanggan, nomor_antrian, tipe_pesanan) VALUES (?, ?, ?, ?, ?, ?)";
         String queryItem = "INSERT INTO transaction_items (transaction_id, menu_id, qty, subtotal) VALUES (?, ?, ?, ?)";
         String queryUpdateStok = "UPDATE menus SET stok = stok - ? WHERE id = ?";
         
@@ -34,6 +34,9 @@ public class TransactionDAO {
                 stmtTx.setDouble(1, transaction.getTotal());
                 stmtTx.setString(2, transaction.getMetodePembayaran());
                 stmtTx.setString(3, transaction.getCatatan());
+                stmtTx.setString(4, transaction.getNamaPelanggan());
+                stmtTx.setString(5, transaction.getNomorAntrian());
+                stmtTx.setString(6, transaction.getTipePesanan());
                 stmtTx.executeUpdate();
                 
                 try (ResultSet rs = stmtTx.getGeneratedKeys()) {
@@ -172,6 +175,9 @@ public class TransactionDAO {
                     rs.getString("catatan"),
                     time
                 );
+                t.setNamaPelanggan(rs.getString("nama_pelanggan"));
+                t.setNomorAntrian(rs.getString("nomor_antrian"));
+                t.setTipePesanan(rs.getString("tipe_pesanan"));
                 list.add(t);
             }
         } catch (SQLException e) {
@@ -208,6 +214,9 @@ public class TransactionDAO {
                         rs.getString("catatan"),
                         time
                     );
+                    t.setNamaPelanggan(rs.getString("nama_pelanggan"));
+                    t.setNomorAntrian(rs.getString("nomor_antrian"));
+                    t.setTipePesanan(rs.getString("tipe_pesanan"));
                     list.add(t);
                 }
             }
