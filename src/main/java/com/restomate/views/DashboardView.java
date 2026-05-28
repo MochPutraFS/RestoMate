@@ -23,6 +23,12 @@ import javafx.scene.shape.Rectangle;
 
 public class DashboardView {
 
+    private static DashboardView instance;
+
+    public static DashboardView getInstance() {
+        return instance;
+    }
+
     private BorderPane root;
     private StackPane centerContainer;
     private User currentUser;
@@ -74,6 +80,7 @@ public class DashboardView {
             "-fx-border-width: 0 0 0 4;";
 
     public DashboardView(User currentUser) {
+        instance = this;
         this.currentUser = currentUser;
         cashierView     = new CashierView();
         manageMenuView  = new ManageMenuView();
@@ -238,6 +245,13 @@ public class DashboardView {
             if (btn != activeButton) btn.setStyle(STYLE_NORMAL);
         });
         return btn;
+    }
+
+    public void switchToCashierAndLoadPreOrder(String customerName, String menuDipesan) {
+        if (btnKasirRef != null) {
+            cashierView.getController().loadPreOrderReservation(customerName, menuDipesan);
+            btnKasirRef.fire();
+        }
     }
 
     public BorderPane getView() {

@@ -81,19 +81,44 @@ public class Database {
                     "nama_pelanggan TEXT NOT NULL, " +
                     "nomor_meja INTEGER NOT NULL, " +
                     "waktu_reservasi TEXT NOT NULL, " +
-                    "status TEXT DEFAULT 'AKTIF'" +
+                    "status TEXT DEFAULT 'AKTIF', " +
+                    "jumlah_orang INTEGER DEFAULT 1, " +
+                    "menu_dipesan TEXT, " +
+                    "catatan TEXT, " +
+                    "waktu_siap TEXT" +
                     ");");
+
+            try {
+                stmt.execute("ALTER TABLE reservations ADD COLUMN jumlah_orang INTEGER DEFAULT 1;");
+            } catch (SQLException ignore) { }
+
+            try {
+                stmt.execute("ALTER TABLE reservations ADD COLUMN menu_dipesan TEXT;");
+            } catch (SQLException ignore) { }
+
+            try {
+                stmt.execute("ALTER TABLE reservations ADD COLUMN catatan TEXT;");
+            } catch (SQLException ignore) { }
+
+            try {
+                stmt.execute("ALTER TABLE reservations ADD COLUMN waktu_siap TEXT;");
+            } catch (SQLException ignore) { }
 
             stmt.execute("CREATE TABLE IF NOT EXISTS restaurant_tables (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    "nomor_meja INTEGER NOT NULL UNIQUE" +
+                    "nomor_meja INTEGER NOT NULL UNIQUE, " +
+                    "kapasitas INTEGER DEFAULT 4" +
                     ");");
+
+            try {
+                stmt.execute("ALTER TABLE restaurant_tables ADD COLUMN kapasitas INTEGER DEFAULT 4;");
+            } catch (SQLException ignore) { }
 
             try {
                 var rsMeja = stmt.executeQuery("SELECT count(*) FROM restaurant_tables");
                 if (rsMeja.next() && rsMeja.getInt(1) == 0) {
                     for (int i = 1; i <= 12; i++) {
-                        stmt.execute("INSERT INTO restaurant_tables (nomor_meja) VALUES (" + i + ")");
+                        stmt.execute("INSERT INTO restaurant_tables (nomor_meja, kapasitas) VALUES (" + i + ", 4)");
                     }
                     System.out.println("Default 12 tables seeded.");
                 }

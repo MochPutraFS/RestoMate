@@ -571,6 +571,63 @@ public class CashierController {
         });
     }
 
+    public void loadPreOrderReservation(String customerName, String menuDipesan) {
+        cartItems.clear();
+        view.getTxtNamaPelanggan().setText(customerName);
+        
+        if (view.getTxtNomorAntrian().getText().trim().isEmpty()) {
+            generateNextQueueNumber();
+        }
+        
+        if (menuDipesan == null || menuDipesan.trim().isEmpty()) {
+            updateTotal();
+            return;
+        }
+        
+        // E.g., menuDipesan = "Nasi Goreng x2, Es Teh x3" atau "Nasi Goreng (2), Es Teh (3)"
+        String[] items = menuDipesan.split(", ");
+        List<MenuRestoran> allMenus = menuDAO.getAllMenus();
+        
+        for (String itemStr : items) {
+            itemStr = itemStr.trim();
+            if (itemStr.isEmpty()) continue;
+            
+            String menuName = "";
+            int qty = 1;
+            
+            if (itemStr.matches(".*\\sx\\d+$")) {
+                int lastIdx = itemStr.lastIndexOf(" x");
+                menuName = itemStr.substring(0, lastIdx).trim();
+                try {
+                    qty = Integer.parseInt(itemStr.substring(lastIdx + 2).trim());
+                } catch (NumberFormatException ignored) {}
+            } else if (itemStr.matches(".*\\(\\d+\\)$")) {
+                int lastIdx = itemStr.lastIndexOf(" (");
+                menuName = itemStr.substring(0, lastIdx).trim();
+                try {
+                    qty = Integer.parseInt(itemStr.substring(lastIdx + 2, itemStr.length() - 1).trim());
+                } catch (NumberFormatException ignored) {}
+            } else {
+                menuName = itemStr;
+                qty = 1;
+            }
+            
+            final String targetName = menuName;
+            MenuRestoran matchedMenu = null;
+            for (MenuRestoran menu : allMenus) {
+                if (menu.getNama().equalsIgnoreCase(targetName)) {
+                    matchedMenu = menu;
+                    break;
+                }
+            }
+            
+            if (matchedMenu != null) {
+                cartItems.add(new CartItem(matchedMenu.getId(), matchedMenu.getNama(), qty, matchedMenu.getHarga() * qty));
+            }
+        }
+        updateTotal();
+    }
+
     private String generateReceiptText(double subtotal, double discPercent, double discountAmount, double taxAmount, double grandTotal, double paidAmount, double changeAmount, String userNote) {
         java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");

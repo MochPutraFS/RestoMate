@@ -1,5 +1,6 @@
 package com.restomate.dao;
 
+import com.restomate.models.RestaurantTable;
 import com.restomate.utils.Database;
 
 import java.sql.Connection;
@@ -29,14 +30,42 @@ public class TableDAO {
         return list;
     }
 
-    // Menambahkan meja baru ke database
+    // Mengambil semua objek meja beserta kapasitasnya
+    public List<RestaurantTable> getAllTables() {
+        List<RestaurantTable> list = new ArrayList<>();
+        String query = "SELECT id, nomor_meja, kapasitas FROM restaurant_tables ORDER BY nomor_meja ASC";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(new RestaurantTable(
+                    rs.getInt("id"),
+                    rs.getInt("nomor_meja"),
+                    rs.getInt("kapasitas")
+                ));
+            }
+        } catch (SQLException e) {
+            System.err.println("Gagal mengambil daftar meja: " + e.getMessage());
+        }
+        return list;
+    }
+
+    // Menambahkan meja baru ke database dengan kapasitas default
     public boolean addTable(int nomorMeja) {
-        String query = "INSERT INTO restaurant_tables (nomor_meja) VALUES (?)";
+        return addTable(nomorMeja, 4); // Default kapasitas 4
+    }
+
+    // Menambahkan meja baru ke database dengan kapasitas kustom
+    public boolean addTable(int nomorMeja, int kapasitas) {
+        String query = "INSERT INTO restaurant_tables (nomor_meja, kapasitas) VALUES (?, ?)";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
 
             stmt.setInt(1, nomorMeja);
+            stmt.setInt(2, kapasitas);
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
