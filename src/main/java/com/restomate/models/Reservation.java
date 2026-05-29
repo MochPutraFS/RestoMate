@@ -12,12 +12,18 @@ public class Reservation {
     private String menuDipesan;
     private String catatan;
     private String waktuSiap;
+    private double biayaTotal;
+    private double dpDibayar;
 
     public Reservation(int id, String namaPelanggan, int nomorMeja, LocalDateTime waktuReservasi, String status) {
-        this(id, namaPelanggan, nomorMeja, waktuReservasi, status, 1, "", "", "");
+        this(id, namaPelanggan, nomorMeja, waktuReservasi, status, 1, "", "", "", 0.0, 0.0);
     }
 
     public Reservation(int id, String namaPelanggan, int nomorMeja, LocalDateTime waktuReservasi, String status, int jumlahOrang, String menuDipesan, String catatan, String waktuSiap) {
+        this(id, namaPelanggan, nomorMeja, waktuReservasi, status, jumlahOrang, menuDipesan, catatan, waktuSiap, 0.0, 0.0);
+    }
+
+    public Reservation(int id, String namaPelanggan, int nomorMeja, LocalDateTime waktuReservasi, String status, int jumlahOrang, String menuDipesan, String catatan, String waktuSiap, double biayaTotal, double dpDibayar) {
         this.id = id;
         this.namaPelanggan = namaPelanggan;
         this.nomorMeja = nomorMeja;
@@ -27,6 +33,8 @@ public class Reservation {
         this.menuDipesan = menuDipesan;
         this.catatan = catatan;
         this.waktuSiap = waktuSiap;
+        this.biayaTotal = biayaTotal;
+        this.dpDibayar = dpDibayar;
     }
     
     public Reservation() {}
@@ -57,4 +65,10 @@ public class Reservation {
 
     public String getWaktuSiap() { return waktuSiap; }
     public void setWaktuSiap(String waktuSiap) { this.waktuSiap = waktuSiap; }
+
+    public double getBiayaTotal() { return biayaTotal; }
+    public void setBiayaTotal(double biayaTotal) { this.biayaTotal = biayaTotal; }
+
+    public double getDpDibayar() { return dpDibayar; }
+    public void setDpDibayar(double dpDibayar) { this.dpDibayar = dpDibayar; }
 }

@@ -247,9 +247,9 @@ public class DashboardView {
         return btn;
     }
 
-    public void switchToCashierAndLoadPreOrder(String customerName, String menuDipesan) {
+    public void switchToCashierAndLoadPreOrder(int reservationId, String customerName, String menuDipesan, double dpPaid) {
         if (btnKasirRef != null) {
-            cashierView.getController().loadPreOrderReservation(customerName, menuDipesan);
+            cashierView.getController().loadPreOrderReservation(reservationId, customerName, menuDipesan, dpPaid);
             btnKasirRef.fire();
         }
     }

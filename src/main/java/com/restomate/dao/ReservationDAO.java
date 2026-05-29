@@ -29,10 +29,21 @@ public class ReservationDAO {
             while (rs.next()) {
                 // Parsing string waktu dari SQLite balik jadi LocalDateTime biar java-friendly
                 LocalDateTime waktu = null;
-                try {
-                    waktu = LocalDateTime.parse(rs.getString("waktu_reservasi"), FORMATTER);
-                } catch (Exception e) {
-                    System.err.println("Waktu reservasi agak beda format nih: " + rs.getString("waktu_reservasi"));
+                String rawWaktu = rs.getString("waktu_reservasi");
+                if (rawWaktu != null && !rawWaktu.trim().isEmpty()) {
+                    try {
+                        waktu = LocalDateTime.parse(rawWaktu, FORMATTER);
+                    } catch (Exception e) {
+                        try {
+                            waktu = LocalDateTime.parse(rawWaktu, DateTimeFormatter.ofPattern("d MMM yyyy HH:mm", java.util.Locale.ENGLISH));
+                        } catch (Exception ex) {
+                            try {
+                                waktu = LocalDateTime.parse(rawWaktu, DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm", java.util.Locale.ENGLISH));
+                            } catch (Exception ex2) {
+                                System.err.println("Waktu reservasi agak beda format nih: " + rawWaktu);
+                            }
+                        }
+                    }
                 }
                 
                 Reservation r = new Reservation(
@@ -44,7 +55,9 @@ public class ReservationDAO {
                     rs.getInt("jumlah_orang"),
                     rs.getString("menu_dipesan"),
                     rs.getString("catatan"),
-                    rs.getString("waktu_siap")
+                    rs.getString("waktu_siap"),
+                    rs.getDouble("biaya_total"),
+                    rs.getDouble("dp_dibayar")
                 );
                 list.add(r);
             }
@@ -56,11 +69,11 @@ public class ReservationDAO {
 
     // Tambah data bookingan meja baru
     public boolean addReservation(Reservation r) {
-        String query = "INSERT INTO reservations (nama_pelanggan, nomor_meja, waktu_reservasi, status, jumlah_orang, menu_dipesan, catatan, waktu_siap) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO reservations (nama_pelanggan, nomor_meja, waktu_reservasi, status, jumlah_orang, menu_dipesan, catatan, waktu_siap, biaya_total, dp_dibayar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = Database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
-              
+               
             stmt.setString(1, r.getNamaPelanggan());
             stmt.setInt(2, r.getNomorMeja());
             stmt.setString(3, r.getWaktuReservasi() != null ? r.getWaktuReservasi().format(FORMATTER) : ""); // Ubah format ke String buat masuk DB
@@ -69,6 +82,8 @@ public class ReservationDAO {
             stmt.setString(6, r.getMenuDipesan());
             stmt.setString(7, r.getCatatan());
             stmt.setString(8, r.getWaktuSiap());
+            stmt.setDouble(9, r.getBiayaTotal());
+            stmt.setDouble(10, r.getDpDibayar());
             
             return stmt.executeUpdate() > 0;
             
@@ -138,10 +153,21 @@ public class ReservationDAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     LocalDateTime waktu = null;
-                    try {
-                        waktu = LocalDateTime.parse(rs.getString("waktu_reservasi"), FORMATTER);
-                    } catch (Exception e) {
-                        System.err.println("Gagal parse waktu bentrok: " + rs.getString("waktu_reservasi"));
+                    String rawWaktu = rs.getString("waktu_reservasi");
+                    if (rawWaktu != null && !rawWaktu.trim().isEmpty()) {
+                        try {
+                            waktu = LocalDateTime.parse(rawWaktu, FORMATTER);
+                        } catch (Exception e) {
+                            try {
+                                waktu = LocalDateTime.parse(rawWaktu, DateTimeFormatter.ofPattern("d MMM yyyy HH:mm", java.util.Locale.ENGLISH));
+                            } catch (Exception ex) {
+                                try {
+                                    waktu = LocalDateTime.parse(rawWaktu, DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm", java.util.Locale.ENGLISH));
+                                } catch (Exception ex2) {
+                                    System.err.println("Gagal parse waktu bentrok: " + rawWaktu);
+                                }
+                            }
+                        }
                     }
                     if (waktu != null) {
                         Reservation r = new Reservation();

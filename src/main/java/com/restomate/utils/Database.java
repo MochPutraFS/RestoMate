@@ -85,7 +85,9 @@ public class Database {
                     "jumlah_orang INTEGER DEFAULT 1, " +
                     "menu_dipesan TEXT, " +
                     "catatan TEXT, " +
-                    "waktu_siap TEXT" +
+                    "waktu_siap TEXT, " +
+                    "biaya_total REAL DEFAULT 0, " +
+                    "dp_dibayar REAL DEFAULT 0" +
                     ");");
 
             try {
@@ -102,6 +104,14 @@ public class Database {
 
             try {
                 stmt.execute("ALTER TABLE reservations ADD COLUMN waktu_siap TEXT;");
+            } catch (SQLException ignore) { }
+
+            try {
+                stmt.execute("ALTER TABLE reservations ADD COLUMN biaya_total REAL DEFAULT 0;");
+            } catch (SQLException ignore) { }
+
+            try {
+                stmt.execute("ALTER TABLE reservations ADD COLUMN dp_dibayar REAL DEFAULT 0;");
             } catch (SQLException ignore) { }
 
             stmt.execute("CREATE TABLE IF NOT EXISTS restaurant_tables (" +

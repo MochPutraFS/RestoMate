@@ -34,10 +34,12 @@ public class CashierController {
     private CashierView view;
     private MenuDAO menuDAO;
     private TransactionDAO transactionDAO;
-    private ObservableList<CartItem> cartItems; 
+    private ObservableList<CartItem> cartItems;
     private ObservableList<MenuRestoran> menuItems;
     private List<HoldSession> holdSessions;
     private double currentGrandTotal = 0;
+    private double dpPaid = 0;
+    private int activeReservationId = 0;
 
     public CashierController(CashierView view) {
         this.view = view;
@@ -46,12 +48,12 @@ public class CashierController {
         this.cartItems = FXCollections.observableArrayList();
         this.menuItems = FXCollections.observableArrayList();
         this.holdSessions = new ArrayList<>();
-        
+
         setupCartTable();
         setupMenuTable();
         setupSearchAndFilter();
         setupListeners();
-        
+
         loadMenus();
         setupActions();
         generateNextQueueNumber();
@@ -59,11 +61,11 @@ public class CashierController {
 
     private void setupCartTable() {
         TableView<CartItem> table = view.getCartTable();
-        
+
         TableColumn<CartItem, String> colName = new TableColumn<>("Item");
         colName.setCellValueFactory(data -> data.getValue().namaProperty());
         colName.setPrefWidth(130);
-        
+
         TableColumn<CartItem, CartItem> colQty = new TableColumn<>("Qty");
         colQty.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue()));
         colQty.setCellFactory(column -> new TableCell<CartItem, CartItem>() {
@@ -71,16 +73,22 @@ public class CashierController {
             private final Button btnPlus = new Button("+");
             private final Label lblQty = new Label();
             private final HBox container = new HBox(6, btnMinus, lblQty, btnPlus);
-            
+
             {
                 container.setAlignment(Pos.CENTER);
-                btnMinus.setStyle("-fx-background-color: #E0E0E0; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-size: 10px;");
-                btnMinus.setOnMouseEntered(e -> btnMinus.setStyle("-fx-background-color: #BDBDBD; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-size: 10px; -fx-cursor: hand;"));
-                btnMinus.setOnMouseExited(e -> btnMinus.setStyle("-fx-background-color: #E0E0E0; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-size: 10px;"));
+                btnMinus.setStyle(
+                        "-fx-background-color: #E0E0E0; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-size: 10px;");
+                btnMinus.setOnMouseEntered(e -> btnMinus.setStyle(
+                        "-fx-background-color: #BDBDBD; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-size: 10px; -fx-cursor: hand;"));
+                btnMinus.setOnMouseExited(e -> btnMinus.setStyle(
+                        "-fx-background-color: #E0E0E0; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-size: 10px;"));
 
-                btnPlus.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 5; -fx-font-size: 10px;");
-                btnPlus.setOnMouseEntered(e -> btnPlus.setStyle("-fx-background-color: #1976D2; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 5; -fx-font-size: 10px; -fx-cursor: hand;"));
-                btnPlus.setOnMouseExited(e -> btnPlus.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 5; -fx-font-size: 10px;"));
+                btnPlus.setStyle(
+                        "-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 5; -fx-font-size: 10px;");
+                btnPlus.setOnMouseEntered(e -> btnPlus.setStyle(
+                        "-fx-background-color: #1976D2; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 5; -fx-font-size: 10px; -fx-cursor: hand;"));
+                btnPlus.setOnMouseExited(e -> btnPlus.setStyle(
+                        "-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-padding: 2 5; -fx-font-size: 10px;"));
             }
 
             @Override
@@ -90,7 +98,7 @@ public class CashierController {
                     setGraphic(null);
                 } else {
                     lblQty.setText(String.valueOf(item.getQty()));
-                    
+
                     btnMinus.setOnAction(e -> {
                         if (item.getQty() > 1) {
                             item.setQty(item.getQty() - 1);
@@ -102,7 +110,7 @@ public class CashierController {
                             updateTotal();
                         }
                     });
-                    
+
                     btnPlus.setOnAction(e -> {
                         int stokLimit = getMenuStock(item.getMenuId());
                         if (item.getQty() < stokLimit) {
@@ -111,17 +119,18 @@ public class CashierController {
                             updateTotal();
                             view.getCartTable().refresh();
                         } else {
-                            showAlert(Alert.AlertType.WARNING, "Stok Habis", "Udah gak bisa nambah lagi, stok tinggal " + stokLimit);
+                            showAlert(Alert.AlertType.WARNING, "Stok Habis",
+                                    "Udah gak bisa nambah lagi, stok tinggal " + stokLimit);
                         }
                     });
-                    
+
                     setGraphic(container);
                 }
             }
         });
         colQty.setPrefWidth(95);
         colQty.setStyle("-fx-alignment: CENTER;");
-        
+
         TableColumn<CartItem, String> colSubtotal = new TableColumn<>("Subtotal");
         colSubtotal.setCellValueFactory(data -> {
             java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
@@ -134,10 +143,14 @@ public class CashierController {
         colAksi.setCellFactory(column -> new TableCell<CartItem, CartItem>() {
             private final Button btnDel = new Button("🗑️");
             {
-                btnDel.setStyle("-fx-background-color: #FFCDD2; -fx-text-fill: #D32F2F; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 3 8;");
-                btnDel.setOnMouseEntered(e -> btnDel.setStyle("-fx-background-color: #EF5350; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 3 8; -fx-cursor: hand;"));
-                btnDel.setOnMouseExited(e -> btnDel.setStyle("-fx-background-color: #FFCDD2; -fx-text-fill: #D32F2F; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 3 8;"));
+                btnDel.setStyle(
+                        "-fx-background-color: #FFCDD2; -fx-text-fill: #D32F2F; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 3 8;");
+                btnDel.setOnMouseEntered(e -> btnDel.setStyle(
+                        "-fx-background-color: #EF5350; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 3 8; -fx-cursor: hand;"));
+                btnDel.setOnMouseExited(e -> btnDel.setStyle(
+                        "-fx-background-color: #FFCDD2; -fx-text-fill: #D32F2F; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 3 8;"));
             }
+
             @Override
             protected void updateItem(CartItem item, boolean empty) {
                 super.updateItem(item, empty);
@@ -154,7 +167,7 @@ public class CashierController {
         });
         colAksi.setPrefWidth(40);
         colAksi.setStyle("-fx-alignment: CENTER;");
-        
+
         table.getColumns().addAll(colName, colQty, colSubtotal, colAksi);
         table.setItems(cartItems);
     }
@@ -168,10 +181,10 @@ public class CashierController {
             }
             updateTotal();
         });
-        
+
         // Listener Diskon
         view.getCmbDiscount().setOnAction(e -> updateTotal());
-        
+
         // Listener Metode Pembayaran
         view.getCmbPayment().setOnAction(e -> {
             updateTotal();
@@ -183,14 +196,14 @@ public class CashierController {
             view.getBtn100k().setDisable(isQris);
         });
     }
-    
+
     // Fitur pencarian otomatis nge-refresh kartu tiap kali kita ngetik
     private void setupSearchAndFilter() {
         // Setiap kali ada ketikan baru di search bar, langsung render ulang!
         view.getTxtSearch().textProperty().addListener((obs, oldVal, newVal) -> {
             loadMenus();
         });
-        
+
         // Setiap kali ComboBox filter diganti (Makanan/Minuman), render ulang juga!
         view.getCmbFilter().setOnAction(e -> {
             loadMenus();
@@ -256,7 +269,8 @@ public class CashierController {
         colDetail.setCellValueFactory(data -> {
             MenuRestoran menu = data.getValue();
             if (menu instanceof Makanan) {
-                return new SimpleStringProperty("🌶️ Pedas: " + (((Makanan) menu).getTingkatPedas() != null ? ((Makanan) menu).getTingkatPedas() : "-"));
+                return new SimpleStringProperty("🌶️ Pedas: "
+                        + (((Makanan) menu).getTingkatPedas() != null ? ((Makanan) menu).getTingkatPedas() : "-"));
             } else if (menu instanceof Minuman) {
                 return new SimpleStringProperty(((Minuman) menu).isDingin() ? "❄️ Dingin" : "🔥 Panas");
             }
@@ -270,10 +284,14 @@ public class CashierController {
         colAksi.setCellFactory(column -> new TableCell<MenuRestoran, MenuRestoran>() {
             private final Button btnAdd = new Button("+ Keranjang");
             {
-                btnAdd.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;");
-                btnAdd.setOnMouseEntered(e -> btnAdd.setStyle("-fx-background-color: #1976D2; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;"));
-                btnAdd.setOnMouseExited(e -> btnAdd.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;"));
+                btnAdd.setStyle(
+                        "-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;");
+                btnAdd.setOnMouseEntered(e -> btnAdd.setStyle(
+                        "-fx-background-color: #1976D2; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;"));
+                btnAdd.setOnMouseExited(e -> btnAdd.setStyle(
+                        "-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;"));
             }
+
             @Override
             protected void updateItem(MenuRestoran item, boolean empty) {
                 super.updateItem(item, empty);
@@ -305,34 +323,37 @@ public class CashierController {
     public void loadMenus() {
         List<MenuRestoran> menus = menuDAO.getAllMenus();
         menuItems.clear();
-        
+
         if (menus == null || menus.isEmpty()) {
-            view.getMenuTable().setPlaceholder(new Label("Yah, belum ada menu nih di database. Tambahin lewat layar Kelola Menu dulu ya!"));
+            view.getMenuTable().setPlaceholder(
+                    new Label("Yah, belum ada menu nih di database. Tambahin lewat layar Kelola Menu dulu ya!"));
             return;
         }
-        
+
         String searchQuery = view.getTxtSearch().getText().toLowerCase();
         String filterCat = view.getCmbFilter().getValue();
-        
+
         for (MenuRestoran menu : menus) {
             // Syarat 1: Stok masih ada
-            if (menu.getStok() <= 0) continue;
-            
+            if (menu.getStok() <= 0)
+                continue;
+
             // Syarat 2: Filter Kategori
             if (!"SEMUA".equals(filterCat) && !menu.getKategori().equalsIgnoreCase(filterCat)) {
                 continue;
             }
-            
+
             // Syarat 3: Filter Pencarian Nama
             if (!searchQuery.isEmpty() && !menu.getNama().toLowerCase().contains(searchQuery)) {
                 continue;
             }
-            
+
             menuItems.add(menu);
         }
-        
+
         if (menuItems.isEmpty()) {
-            view.getMenuTable().setPlaceholder(new Label("Gak nemu menu yang dicari nih. Coba kata kunci atau kategori lain."));
+            view.getMenuTable()
+                    .setPlaceholder(new Label("Gak nemu menu yang dicari nih. Coba kata kunci atau kategori lain."));
         }
     }
 
@@ -343,14 +364,15 @@ public class CashierController {
                     item.setQty(item.getQty() + 1);
                     item.setSubtotal(item.getQty() * menu.getHarga());
                     updateTotal();
-                    view.getCartTable().refresh(); 
+                    view.getCartTable().refresh();
                 } else {
-                    showAlert(Alert.AlertType.WARNING, "Stok Habis", "Udah gak bisa nambah lagi, stok tinggal " + menu.getStok());
+                    showAlert(Alert.AlertType.WARNING, "Stok Habis",
+                            "Udah gak bisa nambah lagi, stok tinggal " + menu.getStok());
                 }
                 return;
             }
         }
-        
+
         cartItems.add(new CartItem(menu.getId(), menu.getNama(), 1, menu.getHarga()));
         updateTotal();
     }
@@ -360,7 +382,7 @@ public class CashierController {
         for (CartItem item : cartItems) {
             subtotal += item.getSubtotal();
         }
-        
+
         // Diskon
         String discStr = view.getCmbDiscount().getValue();
         double discPercent = 0;
@@ -368,29 +390,31 @@ public class CashierController {
             discPercent = Double.parseDouble(discStr.replace("%", ""));
         }
         double discountAmount = subtotal * (discPercent / 100);
-        
+
         // Pajak PB1 (10% dari nominal kena pajak)
         double taxableAmount = subtotal - discountAmount;
         double taxAmount = taxableAmount * 0.10;
-        
+
         // Grand Total
         double grandTotal = taxableAmount + taxAmount;
-        this.currentGrandTotal = grandTotal;
-        
+        double sisaBayar = Math.max(0, grandTotal - dpPaid);
+        this.currentGrandTotal = sisaBayar;
+
         java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
-        
+
         view.getLblSubtotal().setText("Rp " + formatter.format(subtotal));
         view.getLblDiscountAmount().setText("Rp " + formatter.format(discountAmount));
         view.getLblTaxAmount().setText("Rp " + formatter.format(taxAmount));
-        view.getLblTotal().setText("Rp " + formatter.format(grandTotal));
-        
-        updateChange(grandTotal);
+        view.getLblDPPaid().setText("-Rp " + formatter.format(dpPaid));
+        view.getLblTotal().setText("Rp " + formatter.format(sisaBayar));
+
+        updateChange(sisaBayar);
     }
 
     private void updateChange(double grandTotal) {
         String payment = view.getCmbPayment().getValue();
         java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
-        
+
         if ("QRIS".equalsIgnoreCase(payment)) {
             view.getTxtAmountPaid().setText(String.valueOf((int) grandTotal));
             view.getTxtAmountPaid().setDisable(true);
@@ -432,6 +456,8 @@ public class CashierController {
             view.getCmbOrderType().setValue("DINE IN");
             view.getCmbDiscount().setValue("0%");
             view.getCmbPayment().setValue("CASH");
+            this.dpPaid = 0;
+            this.activeReservationId = 0;
             updateTotal();
         });
 
@@ -445,14 +471,14 @@ public class CashierController {
         // Hold & Recall
         view.getBtnHold().setOnAction(e -> handleHold());
         view.getBtnRecall().setOnAction(e -> handleRecall());
-        
+
         // Logika Bayar
         view.getBtnPay().setOnAction(e -> {
             if (cartItems.isEmpty()) {
                 showAlert(Alert.AlertType.WARNING, "Keranjang Kosong", "Pilih menu dulu dong sebelum bayar.");
                 return;
             }
-            
+
             double subtotal = 0;
             List<TransactionItem> dbItems = new ArrayList<>();
             for (CartItem ci : cartItems) {
@@ -460,7 +486,7 @@ public class CashierController {
                 TransactionItem ti = new TransactionItem(0, 0, ci.getMenuId(), ci.getQty(), ci.getSubtotal());
                 dbItems.add(ti);
             }
-            
+
             // Re-calculate values for DB and Receipt
             String discStr = view.getCmbDiscount().getValue();
             double discPercent = 0;
@@ -471,18 +497,21 @@ public class CashierController {
             double taxableAmount = subtotal - discountAmount;
             double taxAmount = taxableAmount * 0.10;
             double grandTotal = taxableAmount + taxAmount;
-            
+            double sisaBayar = Math.max(0, grandTotal - dpPaid);
+
             String paidText = view.getTxtAmountPaid().getText().trim();
-            double paidAmount = grandTotal;
+            double paidAmount = sisaBayar;
             if (!"QRIS".equalsIgnoreCase(view.getCmbPayment().getValue())) {
                 if (paidText.isEmpty()) {
-                    showAlert(Alert.AlertType.WARNING, "Uang Belum Diinput", "Masukkan nominal uang dibayar pelanggan terlebih dahulu!");
+                    showAlert(Alert.AlertType.WARNING, "Uang Belum Diinput",
+                            "Masukkan nominal uang dibayar pelanggan terlebih dahulu!");
                     return;
                 }
                 try {
                     paidAmount = Double.parseDouble(paidText);
-                    if (paidAmount < grandTotal) {
-                        showAlert(Alert.AlertType.WARNING, "Uang Kurang", "Nominal uang dibayar kurang dari total tagihan!");
+                    if (paidAmount < sisaBayar) {
+                        showAlert(Alert.AlertType.WARNING, "Uang Kurang",
+                                "Nominal uang dibayar kurang dari total tagihan!");
                         return;
                     }
                 } catch (NumberFormatException ex) {
@@ -490,29 +519,42 @@ public class CashierController {
                     return;
                 }
             }
-            double changeAmount = paidAmount - grandTotal;
-            
+            double changeAmount = paidAmount - sisaBayar;
+
             // Format notes/catatan untuk database
             StringBuilder notesBuilder = new StringBuilder();
             if (discPercent > 0) {
                 notesBuilder.append("[Diskon: ").append(discStr).append("] ");
             }
             notesBuilder.append("[Pajak PB1: 10%] ");
+            if (dpPaid > 0) {
+                java.text.NumberFormat form = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
+                notesBuilder.append("[DP Terbayar: Rp ").append(form.format(dpPaid)).append("] ");
+            }
             String userNote = view.getTxtCatatan().getText().trim();
             if (!userNote.isEmpty()) {
                 notesBuilder.append("Catatan: ").append(userNote);
             }
-            
-            Transaction tx = new Transaction(0, grandTotal, view.getCmbPayment().getValue(), notesBuilder.toString(), LocalDateTime.now());
+
+            Transaction tx = new Transaction(0, sisaBayar, view.getCmbPayment().getValue(), notesBuilder.toString(),
+                    LocalDateTime.now());
             tx.setNamaPelanggan(view.getTxtNamaPelanggan().getText().trim());
             tx.setNomorAntrian(view.getTxtNomorAntrian().getText().trim());
             tx.setTipePesanan(view.getCmbOrderType().getValue());
-            
+
             boolean success = transactionDAO.saveTransaction(tx, dbItems);
             if (success) {
+                // Jika transaksi ini berasal dari Check-In Reservasi, ubah status reservasi
+                // menjadi SELESAI
+                if (this.activeReservationId > 0) {
+                    new com.restomate.dao.ReservationDAO().updateStatus(this.activeReservationId, "SELESAI");
+                    this.activeReservationId = 0;
+                }
+
                 // Generate Receipt String
-                String receiptText = generateReceiptText(subtotal, discPercent, discountAmount, taxAmount, grandTotal, paidAmount, changeAmount, userNote);
-                
+                String receiptText = generateReceiptText(subtotal, discPercent, discountAmount, taxAmount, grandTotal,
+                        paidAmount, changeAmount, userNote);
+
                 // Save receipt to a text file
                 try {
                     java.nio.file.Path receiptsDir = java.nio.file.Paths.get("receipts");
@@ -524,7 +566,7 @@ public class CashierController {
                 } catch (Exception ex) {
                     System.err.println("Gagal mencetak struk ke file: " + ex.getMessage());
                 }
-                
+
                 showAlert(Alert.AlertType.INFORMATION, "Sukses!", "Pembayaran berhasil disimpan. Struk telah dicetak.");
                 cartItems.clear();
                 view.getTxtSearch().clear();
@@ -536,9 +578,10 @@ public class CashierController {
                 view.getCmbOrderType().setValue("DINE IN");
                 view.getCmbDiscount().setValue("0%");
                 view.getCmbPayment().setValue("CASH");
+                this.dpPaid = 0;
                 updateTotal();
-                loadMenus(); 
-                
+                loadMenus();
+
                 // Show receipt pop-up dialog
                 showReceiptDialog(receiptText);
             } else {
@@ -571,47 +614,53 @@ public class CashierController {
         });
     }
 
-    public void loadPreOrderReservation(String customerName, String menuDipesan) {
+    public void loadPreOrderReservation(int reservationId, String customerName, String menuDipesan, double dpPaid) {
         cartItems.clear();
+        this.dpPaid = dpPaid;
+        this.activeReservationId = reservationId;
         view.getTxtNamaPelanggan().setText(customerName);
-        
+
         if (view.getTxtNomorAntrian().getText().trim().isEmpty()) {
             generateNextQueueNumber();
         }
-        
+
         if (menuDipesan == null || menuDipesan.trim().isEmpty()) {
             updateTotal();
             return;
         }
-        
-        // E.g., menuDipesan = "Nasi Goreng x2, Es Teh x3" atau "Nasi Goreng (2), Es Teh (3)"
+
+        // E.g., menuDipesan = "Nasi Goreng x2, Es Teh x3" atau "Nasi Goreng (2), Es Teh
+        // (3)"
         String[] items = menuDipesan.split(", ");
         List<MenuRestoran> allMenus = menuDAO.getAllMenus();
-        
+
         for (String itemStr : items) {
             itemStr = itemStr.trim();
-            if (itemStr.isEmpty()) continue;
-            
+            if (itemStr.isEmpty())
+                continue;
+
             String menuName = "";
             int qty = 1;
-            
+
             if (itemStr.matches(".*\\sx\\d+$")) {
                 int lastIdx = itemStr.lastIndexOf(" x");
                 menuName = itemStr.substring(0, lastIdx).trim();
                 try {
                     qty = Integer.parseInt(itemStr.substring(lastIdx + 2).trim());
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             } else if (itemStr.matches(".*\\(\\d+\\)$")) {
                 int lastIdx = itemStr.lastIndexOf(" (");
                 menuName = itemStr.substring(0, lastIdx).trim();
                 try {
                     qty = Integer.parseInt(itemStr.substring(lastIdx + 2, itemStr.length() - 1).trim());
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             } else {
                 menuName = itemStr;
                 qty = 1;
             }
-            
+
             final String targetName = menuName;
             MenuRestoran matchedMenu = null;
             for (MenuRestoran menu : allMenus) {
@@ -620,18 +669,20 @@ public class CashierController {
                     break;
                 }
             }
-            
+
             if (matchedMenu != null) {
-                cartItems.add(new CartItem(matchedMenu.getId(), matchedMenu.getNama(), qty, matchedMenu.getHarga() * qty));
+                cartItems.add(
+                        new CartItem(matchedMenu.getId(), matchedMenu.getNama(), qty, matchedMenu.getHarga() * qty));
             }
         }
         updateTotal();
     }
 
-    private String generateReceiptText(double subtotal, double discPercent, double discountAmount, double taxAmount, double grandTotal, double paidAmount, double changeAmount, String userNote) {
+    private String generateReceiptText(double subtotal, double discPercent, double discountAmount, double taxAmount,
+            double grandTotal, double paidAmount, double changeAmount, String userNote) {
         java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-        
+
         String namaPelanggan = view.getTxtNamaPelanggan().getText().trim();
         String nomorAntrian = view.getTxtNomorAntrian().getText().trim();
         String tipePesanan = view.getCmbOrderType().getValue();
@@ -650,7 +701,7 @@ public class CashierController {
         }
         sb.append("Tipe    : ").append(tipePesanan).append("\n");
         sb.append("--------------------------------\n");
-        
+
         for (CartItem ci : cartItems) {
             String nameLine = ci.namaProperty().get();
             if (nameLine.length() > 18) {
@@ -658,39 +709,48 @@ public class CashierController {
             }
             String qtyPrice = ci.getQty() + "x";
             String subtotalStr = formatter.format(ci.getSubtotal());
-            
+
             int spaces = 32 - nameLine.length() - subtotalStr.length();
-            if (spaces < 1) spaces = 1;
+            if (spaces < 1)
+                spaces = 1;
             sb.append(nameLine).append(" ".repeat(spaces)).append(subtotalStr).append("\n");
             sb.append("  ").append(qtyPrice).append("\n");
         }
         sb.append("--------------------------------\n");
-        
+
         String subtotalStr = "Rp " + formatter.format(subtotal);
         sb.append("Subtotal:").append(" ".repeat(32 - 9 - subtotalStr.length())).append(subtotalStr).append("\n");
-        
+
         if (discPercent > 0) {
             String discStr = "-Rp " + formatter.format(discountAmount);
             String discLabel = "Diskon (" + (int) discPercent + "%):";
-            sb.append(discLabel).append(" ".repeat(32 - discLabel.length() - discStr.length())).append(discStr).append("\n");
+            sb.append(discLabel).append(" ".repeat(32 - discLabel.length() - discStr.length())).append(discStr)
+                    .append("\n");
         }
-        
+
         String taxStr = "Rp " + formatter.format(taxAmount);
         sb.append("Pajak PB1 (10%):").append(" ".repeat(32 - 16 - taxStr.length())).append(taxStr).append("\n");
         sb.append("--------------------------------\n");
-        
+
         String grandTotalStr = "Rp " + formatter.format(grandTotal);
         sb.append("TOTAL:").append(" ".repeat(32 - 6 - grandTotalStr.length())).append(grandTotalStr).append("\n");
-        
+
+        if (dpPaid > 0) {
+            String dpStr = "-Rp " + formatter.format(dpPaid);
+            sb.append("DP Terbayar:").append(" ".repeat(32 - 12 - dpStr.length())).append(dpStr).append("\n");
+            String sisaStr = "Rp " + formatter.format(Math.max(0, grandTotal - dpPaid));
+            sb.append("Sisa Bayar:").append(" ".repeat(32 - 11 - sisaStr.length())).append(sisaStr).append("\n");
+        }
+
         String method = view.getCmbPayment().getValue();
         sb.append("Metode:").append(" ".repeat(32 - 7 - method.length())).append(method).append("\n");
-        
+
         String paidStr = "Rp " + formatter.format(paidAmount);
         sb.append("Dibayar:").append(" ".repeat(32 - 8 - paidStr.length())).append(paidStr).append("\n");
-        
+
         String changeStr = "Rp " + formatter.format(changeAmount);
         sb.append("Kembalian:").append(" ".repeat(32 - 10 - changeStr.length())).append(changeStr).append("\n");
-        
+
         if (userNote != null && !userNote.trim().isEmpty()) {
             sb.append("--------------------------------\n");
             sb.append("Catatan: ").append(userNote).append("\n");
@@ -698,7 +758,7 @@ public class CashierController {
         sb.append("================================\n");
         sb.append("Terima kasih atas kunjungan Anda\n");
         sb.append("================================\n");
-        
+
         return sb.toString();
     }
 
@@ -706,12 +766,12 @@ public class CashierController {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Struk Pembayaran");
         alert.setHeaderText("Transaksi Berhasil & Struk Dicetak!");
-        
+
         TextArea textArea = new TextArea(receiptText);
         textArea.setEditable(false);
         textArea.setFont(Font.font("Consolas", 12));
         textArea.setPrefSize(350, 450);
-        
+
         alert.getDialogPane().setContent(textArea);
         alert.showAndWait();
     }
@@ -738,24 +798,24 @@ public class CashierController {
 
     private void handleHold() {
         if (cartItems.isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Tangguhkan Pesanan", "Keranjang kosong! Tidak ada pesanan untuk ditangguhkan.");
+            showAlert(Alert.AlertType.WARNING, "Tangguhkan Pesanan",
+                    "Keranjang kosong! Tidak ada pesanan untuk ditangguhkan.");
             return;
         }
-        
+
         HoldSession session = new HoldSession(
-            view.getTxtNamaPelanggan().getText().trim(),
-            view.getTxtNomorAntrian().getText().trim(),
-            view.getCmbOrderType().getValue(),
-            view.getCmbDiscount().getValue(),
-            view.getTxtCatatan().getText().trim(),
-            view.getCmbPayment().getValue(),
-            view.getTxtAmountPaid().getText().trim(),
-            cartItems
-        );
-        
+                view.getTxtNamaPelanggan().getText().trim(),
+                view.getTxtNomorAntrian().getText().trim(),
+                view.getCmbOrderType().getValue(),
+                view.getCmbDiscount().getValue(),
+                view.getTxtCatatan().getText().trim(),
+                view.getCmbPayment().getValue(),
+                view.getTxtAmountPaid().getText().trim(),
+                cartItems);
+
         holdSessions.add(session);
         updateRecallCount();
-        
+
         // Reset Cashier screen state for next customer
         cartItems.clear();
         view.getTxtCatatan().clear();
@@ -765,8 +825,10 @@ public class CashierController {
         view.getCmbOrderType().setValue("DINE IN");
         view.getCmbDiscount().setValue("0%");
         view.getCmbPayment().setValue("CASH");
+        this.dpPaid = 0;
+        this.activeReservationId = 0;
         updateTotal();
-        
+
         showAlert(Alert.AlertType.INFORMATION, "Sukses", "Pesanan berhasil ditangguhkan.");
     }
 
@@ -793,7 +855,8 @@ public class CashierController {
                 if (empty || session == null) {
                     setText(null);
                 } else {
-                    java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("id", "ID"));
+                    java.text.NumberFormat formatter = java.text.NumberFormat
+                            .getInstance(new java.util.Locale("id", "ID"));
                     double total = 0;
                     for (CartItem ci : session.getCartItems()) {
                         total += ci.getSubtotal();
@@ -801,12 +864,12 @@ public class CashierController {
                     String timeStr = session.getTime().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
                     String plg = session.getCustomerName().isEmpty() ? "-" : session.getCustomerName();
                     String antrian = session.getQueueNumber().isEmpty() ? "-" : session.getQueueNumber();
-                    setText(String.format("[%s] Antrian: %s | Pelanggan: %s | Total: Rp %s (%s)", 
-                        timeStr, antrian, plg, formatter.format(total), session.getOrderType()));
+                    setText(String.format("[%s] Antrian: %s | Pelanggan: %s | Total: Rp %s (%s)",
+                            timeStr, antrian, plg, formatter.format(total), session.getOrderType()));
                 }
             }
         });
-        
+
         dialog.getDialogPane().setContent(listView);
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == btnSelect) {
@@ -824,7 +887,7 @@ public class CashierController {
             view.getTxtCatatan().setText(selectedSession.getNotes());
             view.getCmbPayment().setValue(selectedSession.getPaymentMethod());
             view.getTxtAmountPaid().setText(selectedSession.getAmountPaid());
-            
+
             holdSessions.remove(selectedSession);
             updateTotal();
             updateRecallCount();
@@ -851,16 +914,41 @@ public class CashierController {
             this.hargaSatuan = subtotal / qty;
         }
 
-        public int getMenuId() { return menuId.get(); }
-        public int getQty() { return qty.get(); }
-        public void setQty(int value) { qty.set(value); }
-        public double getSubtotal() { return subtotal.get(); }
-        public void setSubtotal(double value) { subtotal.set(value); }
-        public double getHargaSatuan() { return hargaSatuan; }
-        
-        public SimpleStringProperty namaProperty() { return nama; }
-        public SimpleIntegerProperty qtyProperty() { return qty; }
-        public SimpleDoubleProperty subtotalProperty() { return subtotal; }
+        public int getMenuId() {
+            return menuId.get();
+        }
+
+        public int getQty() {
+            return qty.get();
+        }
+
+        public void setQty(int value) {
+            qty.set(value);
+        }
+
+        public double getSubtotal() {
+            return subtotal.get();
+        }
+
+        public void setSubtotal(double value) {
+            subtotal.set(value);
+        }
+
+        public double getHargaSatuan() {
+            return hargaSatuan;
+        }
+
+        public SimpleStringProperty namaProperty() {
+            return nama;
+        }
+
+        public SimpleIntegerProperty qtyProperty() {
+            return qty;
+        }
+
+        public SimpleDoubleProperty subtotalProperty() {
+            return subtotal;
+        }
     }
 
     public static class HoldSession {
@@ -874,7 +962,8 @@ public class CashierController {
         private final List<CartItem> cartItems;
         private final LocalDateTime time;
 
-        public HoldSession(String customerName, String queueNumber, String orderType, String discount, String notes, String paymentMethod, String amountPaid, List<CartItem> cartItems) {
+        public HoldSession(String customerName, String queueNumber, String orderType, String discount, String notes,
+                String paymentMethod, String amountPaid, List<CartItem> cartItems) {
             this.customerName = customerName;
             this.queueNumber = queueNumber;
             this.orderType = orderType;
@@ -886,14 +975,40 @@ public class CashierController {
             this.time = LocalDateTime.now();
         }
 
-        public String getCustomerName() { return customerName; }
-        public String getQueueNumber() { return queueNumber; }
-        public String getOrderType() { return orderType; }
-        public String getDiscount() { return discount; }
-        public String getNotes() { return notes; }
-        public String getPaymentMethod() { return paymentMethod; }
-        public String getAmountPaid() { return amountPaid; }
-        public List<CartItem> getCartItems() { return cartItems; }
-        public LocalDateTime getTime() { return time; }
+        public String getCustomerName() {
+            return customerName;
+        }
+
+        public String getQueueNumber() {
+            return queueNumber;
+        }
+
+        public String getOrderType() {
+            return orderType;
+        }
+
+        public String getDiscount() {
+            return discount;
+        }
+
+        public String getNotes() {
+            return notes;
+        }
+
+        public String getPaymentMethod() {
+            return paymentMethod;
+        }
+
+        public String getAmountPaid() {
+            return amountPaid;
+        }
+
+        public List<CartItem> getCartItems() {
+            return cartItems;
+        }
+
+        public LocalDateTime getTime() {
+            return time;
+        }
     }
 }

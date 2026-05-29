@@ -32,6 +32,7 @@ public class CashierView {
     private Label lblSubtotal;
     private Label lblDiscountAmount;
     private Label lblTaxAmount;
+    private Label lblDPPaid;
     private TextField txtNamaPelanggan;
     private TextField txtNomorAntrian;
     private ComboBox<String> cmbOrderType;
@@ -322,6 +323,7 @@ public class CashierView {
         lblSubtotal       = new Label("Rp 0");
         lblDiscountAmount  = new Label("Rp 0");
         lblTaxAmount      = new Label("Rp 0");
+        lblDPPaid         = new Label("Rp 0");
         lblTotal          = new Label("Rp 0");
         lblTotal.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
         lblTotal.setTextFill(Color.web(CLR_PRIMARY));
@@ -333,6 +335,7 @@ public class CashierView {
                 buildCostRow("Subtotal:",         lblSubtotal,      false),
                 buildCostRow("Diskon:",           lblDiscountAmount, false),
                 buildCostRow("Pajak PB1 (10%):",  lblTaxAmount,     false),
+                buildCostRow("DP Terbayar:",      lblDPPaid,         false),
                 new Separator(),
                 buildCostRow("TOTAL:",            lblTotal,          true),
                 buildCostRow("Kembalian:",        lblChange,         false));
@@ -396,6 +399,7 @@ public class CashierView {
     public Label getLblSubtotal()                            { return lblSubtotal; }
     public Label getLblDiscountAmount()                      { return lblDiscountAmount; }
     public Label getLblTaxAmount()                           { return lblTaxAmount; }
+    public Label getLblDPPaid()                              { return lblDPPaid; }
     public TextField getTxtNamaPelanggan()                  { return txtNamaPelanggan; }
     public TextField getTxtNomorAntrian()                    { return txtNomorAntrian; }
     public ComboBox<String> getCmbOrderType()                { return cmbOrderType; }
