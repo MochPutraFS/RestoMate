@@ -105,6 +105,37 @@ RestoMate/
 
 ---
 
+## 🧱 Penerapan Pilar OOP
+
+Aplikasi **RestoMate** diimplementasikan dengan mematuhi prinsip-prinsip Pemrograman Berorientasi Objek (OOP) secara konsisten. Berikut adalah dokumentasi penerapan keempat pilar OOP dalam kode program:
+
+### 1. Encapsulation (Enkapsulasi)
+Enkapsulasi menyembunyikan data internal dari akses langsung luar kelas menggunakan access modifier `private` dan menyediakan gerbang kontrol akses melalui *getter* dan *setter*.
+* **Penerapan:** Pada kelas [MenuRestoran.java](file:///d:/Kuliah/RestoMate/src/main/java/com/restomate/models/MenuRestoran.java#L4-L8), seluruh atribut dasar dideklarasikan sebagai `private`. Modifikasi nilai variabel dilindungi oleh validasi di dalam setter (misalnya `setHarga()` dan `setStok()`) agar data tetap valid.
+  ```java
+  public void setHarga(double harga) {
+      if (harga < 0) throw new IllegalArgumentException("Harga tidak boleh negatif");
+      this.harga = harga;
+  }
+  ```
+
+### 2. Inheritance (Pewarisan)
+Pewarisan memungkinkan kelas turunan (*subclass*) mewarisi atribut dan perilaku dari kelas induk (*superclass*).
+* **Penerapan:** Kelas [Makanan.java](file:///d:/Kuliah/RestoMate/src/main/java/com/restomate/models/Makanan.java#L3) dan [Minuman.java](file:///d:/Kuliah/RestoMate/src/main/java/com/restomate/models/Minuman.java#L3) merupakan subclass yang mewarisi seluruh properti dan perilaku dasar superclass abstrak [MenuRestoran.java](file:///d:/Kuliah/RestoMate/src/main/java/com/restomate/models/MenuRestoran.java) menggunakan kata kunci `extends`.
+
+### 3. Abstraction (Abstraksi)
+Abstraksi digunakan untuk mendefinisikan kontrak tanpa perlu peduli dengan detail implementasi internal di tingkat superclass.
+* **Penerapan:** Kelas [MenuRestoran.java](file:///d:/Kuliah/RestoMate/src/main/java/com/restomate/models/MenuRestoran.java#L3) dideklarasikan sebagai `abstract class` dengan metode abstrak `tampilkanDetail()`. Hal ini memaksa subclass konkret untuk menyusun sendiri metode penampilan informasinya masing-masing.
+
+### 4. Polymorphism (Polimorfisme)
+Polimorfisme memungkinkan objek turunan diperlakukan sebagai kelas induk secara fleksibel dan dinamis.
+* **Penerapan:**
+  * **Method Overriding:** Metode `tampilkanDetail()` di-override oleh [Makanan.java](file:///d:/Kuliah/RestoMate/src/main/java/com/restomate/models/Makanan.java#L19-L22) untuk menampilkan level pedas, dan oleh [Minuman.java](file:///d:/Kuliah/RestoMate/src/main/java/com/restomate/models/Minuman.java#L19-L23) untuk menampilkan suhu minuman.
+  * **Dynamic Binding & Upcasting:** Pada [MenuDAO.java](file:///d:/Kuliah/RestoMate/src/main/java/com/restomate/dao/MenuDAO.java#L18) dan [ManageMenuController.java](file:///d:/Kuliah/RestoMate/src/main/java/com/restomate/controllers/ManageMenuController.java#L24), berbagai objek makanan dan minuman disimpan dan diproses secara generik menggunakan referensi tipe induk `MenuRestoran` (misalnya di dalam `List<MenuRestoran>`).
+
+---
+
+
 ## 🚀 Panduan Instalasi & Menjalankan Aplikasi
 
 ### Persyaratan Sistem
