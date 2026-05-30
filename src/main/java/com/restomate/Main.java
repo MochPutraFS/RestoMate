@@ -16,15 +16,12 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         mainStage = primaryStage;
 
-        // Inisialisasi database saat aplikasi nyala
         Database.initializeDatabase();
 
-        // Mulai dari halaman Login
         LoginView loginView = new LoginView();
 
         mainScene = new Scene(loginView.getView(), 1024, 700);
 
-        // Tema font global — background diatur per halaman
         mainScene.getRoot().setStyle(
                 "-fx-font-family: 'Segoe UI', sans-serif;");
 
@@ -35,13 +32,8 @@ public class Main extends Application {
         primaryStage.show();
     }
 
-    /**
-     * Fungsi untuk pindah halaman dari mana saja.
-     * Contoh: Main.setRoot(new LoginView().getView());
-     */
     public static void setRoot(Parent root) {
         mainScene.setRoot(root);
-        // Pertahankan font global, background diatur oleh masing-masing view
         root.setStyle("-fx-font-family: 'Segoe UI', sans-serif;");
     }
 
