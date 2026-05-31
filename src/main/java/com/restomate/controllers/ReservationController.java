@@ -662,9 +662,21 @@ public class ReservationController {
         bodyContainer.setPadding(new Insets(15));
         bodyContainer.getChildren().addAll(leftPane, rightPane);
 
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(bodyContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent; -fx-padding: 0;");
+
+        // Dynamically calculate maximum height based on screen visual bounds to prevent clipping on lower resolutions
+        double screenHeight = javafx.stage.Screen.getPrimary().getVisualBounds().getHeight();
+        double maxScrollHeight = Math.max(300, screenHeight - 220); // 220px covers taskbars, title bar, header and action buttons
+        scrollPane.setMaxHeight(maxScrollHeight);
+
         VBox dialogRoot = new VBox(0);
         dialogRoot.setStyle("-fx-background-color: #FDF6EC;");
-        dialogRoot.getChildren().addAll(headerPane, bodyContainer);
+        dialogRoot.getChildren().addAll(headerPane, scrollPane);
 
         dialogPane.setContent(dialogRoot);
 
