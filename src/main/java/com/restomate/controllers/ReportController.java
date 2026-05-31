@@ -214,7 +214,13 @@ public class ReportController {
             String timestamp = String.valueOf(System.currentTimeMillis());
             String fileName = "Laporan_RestoMate_Rentang_" + timestamp + ".txt";
             
-            try (FileWriter writer = new FileWriter(fileName)) {
+            java.io.File reportsDir = new java.io.File("reports");
+            if (!reportsDir.exists()) {
+                reportsDir.mkdirs();
+            }
+            java.io.File reportFile = new java.io.File(reportsDir, fileName);
+            
+            try (FileWriter writer = new FileWriter(reportFile)) {
                 writer.write("=========================================\n");
                 writer.write("        LAPORAN PENDAPATAN HARIAN        \n");
                 writer.write("               RESTOMATE                 \n");
@@ -248,7 +254,7 @@ public class ReportController {
                 writer.write("=========================================================================================\n");
                 writer.write("Terima kasih atas kerja keras hari ini!\n");
                 
-                showAlert(Alert.AlertType.INFORMATION, "Ekspor Sukses", "File laporan tercetak di: " + fileName);
+                showAlert(Alert.AlertType.INFORMATION, "Ekspor Sukses", "File laporan tercetak di: " + reportFile.getPath());
             } catch (IOException ex) {
                 showAlert(Alert.AlertType.ERROR, "Gagal Cetak", "Gagal menulis file laporan: " + ex.getMessage());
             }

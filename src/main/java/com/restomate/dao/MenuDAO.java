@@ -160,4 +160,47 @@ public class MenuDAO {
             }
         }
     }
+
+    // Mengimpor daftar menu secara massal dalam satu transaksi database (All-or-Nothing)
+    public boolean importMenus(List<MenuRestoran> menus) {
+        String query = "INSERT INTO menus (nama, harga, kategori, stok, tingkat_pedas, is_dingin) VALUES (?, ?, ?, ?, ?, ?)";
+        Connection conn = null;
+        try {
+            conn = Database.getConnection();
+            conn.setAutoCommit(false);
+            
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                for (MenuRestoran menu : menus) {
+                    stmt.setString(1, menu.getNama());
+                    stmt.setDouble(2, menu.getHarga());
+                    stmt.setString(3, menu.getKategori());
+                    stmt.setInt(4, menu.getStok());
+                    
+                    if (menu instanceof Makanan) {
+                        Makanan m = (Makanan) menu;
+                        stmt.setString(5, m.getTingkatPedas());
+                        stmt.setNull(6, java.sql.Types.INTEGER);
+                    } else if (menu instanceof Minuman) {
+                        Minuman m = (Minuman) menu;
+                        stmt.setNull(5, java.sql.Types.VARCHAR);
+                        stmt.setInt(6, m.isDingin() ? 1 : 0);
+                    }
+                    stmt.addBatch();
+                }
+                stmt.executeBatch();
+            }
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Gagal mengimpor menu secara massal: " + e.getMessage());
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ex) { }
+            }
+            return false;
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ex) { }
+            }
+        }
+    }
 }

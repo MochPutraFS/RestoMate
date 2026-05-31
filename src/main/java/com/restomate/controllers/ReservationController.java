@@ -768,6 +768,12 @@ public class ReservationController {
                     return;
                 }
 
+                if (dpPaid < 0) {
+                    showAlert(Alert.AlertType.WARNING, "Nominal Salah", "Nominal DP tidak boleh bernilai negatif!");
+                    event.consume();
+                    return;
+                }
+
                 if (dpPaid < minDP) {
                     showAlert(Alert.AlertType.WARNING, "DP Kurang", "Nominal DP yang dibayarkan kurang dari 50% total biaya reservasi (Min: Rp " + minDP + ")!");
                     event.consume();
@@ -1088,7 +1094,11 @@ public class ReservationController {
     }
 
     // Polling Latar Belakang (Sinkronisasi Live)
-    private void startPolling() {
+    public void startPolling() {
+        if (isPolling && pollingThread != null && pollingThread.isAlive()) {
+            return; // Thread is already running and polling is active
+        }
+        isPolling = true;
         pollingThread = new Thread(() -> {
             while (isPolling) {
                 try {

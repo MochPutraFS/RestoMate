@@ -13,6 +13,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.io.*;
 import javafx.stage.FileChooser;
 import javafx.scene.control.TableRow;
@@ -309,16 +310,20 @@ public class ManageMenuController {
                         return;
                     }
                     
-                    int successCount = 0;
-                    int failCount = 0;
+                    List<MenuRestoran> importList = new ArrayList<>();
+                    int lineNum = 1;
+                    boolean parseError = false;
                     
                     while ((line = reader.readLine()) != null) {
+                        lineNum++;
                         if (line.trim().isEmpty()) continue;
                         
                         String[] tokens = parseCsvLine(line);
                         if (tokens.length < 6) {
-                            failCount++;
-                            continue;
+                            showAlert(Alert.AlertType.ERROR, "Format CSV Salah", 
+                                "Gagal membaca baris " + lineNum + ": Jumlah kolom kurang dari 6.");
+                            parseError = true;
+                            break;
                         }
                         
                         try {
@@ -329,27 +334,40 @@ public class ManageMenuController {
                             String pedas = tokens[4].trim();
                             boolean dingin = "1".equals(tokens[5].trim());
                             
+                            if (harga < 0 || stok < 0) {
+                                showAlert(Alert.AlertType.ERROR, "Nilai Tidak Valid", 
+                                    "Gagal membaca baris " + lineNum + ": Harga atau stok bernilai negatif.");
+                                parseError = true;
+                                break;
+                            }
+                            
                             MenuRestoran menu;
                             if ("MAKANAN".equals(kategori)) {
                                 menu = new Makanan(0, nama, harga, stok, pedas);
                             } else {
                                 menu = new Minuman(0, nama, harga, stok, dingin);
                             }
-                            
-                            boolean success = menuDAO.addMenu(menu);
-                            if (success) {
-                                successCount++;
-                            } else {
-                                failCount++;
-                            }
+                            importList.add(menu);
                         } catch (Exception ex) {
-                            failCount++;
+                            showAlert(Alert.AlertType.ERROR, "Parse Error", 
+                                "Gagal membaca baris " + lineNum + ": Kesalahan tipe data harga atau stok.");
+                            parseError = true;
+                            break;
                         }
                     }
                     
-                    loadData(); // Refresh UI & Stats
-                    showAlert(Alert.AlertType.INFORMATION, "Impor Selesai", 
-                        String.format("Proses impor selesai.\nSukses: %d menu\nGagal: %d menu", successCount, failCount));
+                    if (!parseError && !importList.isEmpty()) {
+                        boolean success = menuDAO.importMenus(importList);
+                        if (success) {
+                            loadData(); // Refresh UI & Stats
+                            showAlert(Alert.AlertType.INFORMATION, "Impor Sukses", 
+                                "Berhasil mengimpor " + importList.size() + " data menu secara aman.");
+                        } else {
+                            showAlert(Alert.AlertType.ERROR, "Impor Gagal", "Terjadi kesalahan saat menyimpan data menu ke database.");
+                        }
+                    } else if (importList.isEmpty() && !parseError) {
+                        showAlert(Alert.AlertType.WARNING, "Tidak Ada Data", "Tidak ada data menu baru yang berhasil diimpor.");
+                    }
                 } catch (IOException ex) {
                     showAlert(Alert.AlertType.ERROR, "Impor Gagal", "Gagal membaca berkas CSV: " + ex.getMessage());
                 }
@@ -370,6 +388,11 @@ public class ManageMenuController {
                 
                 double harga = Double.parseDouble(hargaText);
                 int stok = Integer.parseInt(stokText);
+                
+                if (harga < 0 || stok < 0) {
+                    showAlert(Alert.AlertType.WARNING, "Nilai Tidak Valid", "Harga dan stok tidak boleh bernilai negatif!");
+                    return;
+                }
                 String kategori = view.getCmbKategori().getValue();
                 
                 MenuRestoran menu;

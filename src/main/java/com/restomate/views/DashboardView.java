@@ -185,11 +185,17 @@ public class DashboardView {
 
         // ── Aksi Navigasi ──
         btnKasir.setOnAction(e -> {
+            if (reservationView.getController() != null) {
+                reservationView.getController().stopPolling();
+            }
             setActiveButton(btnKasir);
             cashierView.getController().refresh();
             setCenterContent(cashierView.getView());
         });
         btnMenu.setOnAction(e -> {
+            if (reservationView.getController() != null) {
+                reservationView.getController().stopPolling();
+            }
             setActiveButton(btnMenu);
             manageMenuView.getController().refresh();
             setCenterContent(manageMenuView.getView());
@@ -197,8 +203,14 @@ public class DashboardView {
         btnReservasi.setOnAction(e -> {
             setActiveButton(btnReservasi);
             setCenterContent(reservationView.getView());
+            if (reservationView.getController() != null) {
+                reservationView.getController().startPolling();
+            }
         });
         btnLaporan.setOnAction(e -> {
+            if (reservationView.getController() != null) {
+                reservationView.getController().stopPolling();
+            }
             setActiveButton(btnLaporan);
             reportView.getController().refresh();
             setCenterContent(reportView.getView());
