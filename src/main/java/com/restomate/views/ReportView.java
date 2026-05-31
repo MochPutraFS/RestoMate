@@ -78,6 +78,7 @@ public class ReportView {
         Label lblTitle = new Label("📊 Laporan Pendapatan");
         lblTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
         lblTitle.setTextFill(Color.web("#333333"));
+        lblTitle.setStyle("-fx-text-fill: #333333;");
         
         // 1. Filter Tanggal Card
         VBox cardFilter = new VBox(10);
@@ -88,6 +89,7 @@ public class ReportView {
         Label lblFilter = new Label("📅 FILTER RENTANG TANGGAL");
         lblFilter.setFont(Font.font("Segoe UI", FontWeight.BOLD, 10));
         lblFilter.setTextFill(Color.web("#555555"));
+        lblFilter.setStyle("-fx-text-fill: #555555;");
         
         dpMulai = new DatePicker();
         dpMulai.setPromptText("Tanggal Mulai");
@@ -103,7 +105,11 @@ public class ReportView {
         btnFilter.setOnMouseEntered(e -> btnFilter.setStyle("-fx-background-color: #00796B; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8; -fx-background-radius: 5; -fx-cursor: hand;"));
         btnFilter.setOnMouseExited(e -> btnFilter.setStyle("-fx-background-color: #009688; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8; -fx-background-radius: 5;"));
         
-        cardFilter.getChildren().addAll(lblFilter, new Label("Mulai:"), dpMulai, new Label("Sampai:"), dpSelesai, btnFilter);
+        Label lblMulai = new Label("Mulai:");
+        lblMulai.setStyle("-fx-text-fill: #333333;");
+        Label lblSampai = new Label("Sampai:");
+        lblSampai.setStyle("-fx-text-fill: #333333;");
+        cardFilter.getChildren().addAll(lblFilter, lblMulai, dpMulai, lblSampai, dpSelesai, btnFilter);
         
         // 2. Kartu Utama: Total Omset (Hijau Premium)
         VBox cardTotal = new VBox(5);
@@ -115,10 +121,12 @@ public class ReportView {
         Label lblHeader = new Label("RINGKASAN OMSET");
         lblHeader.setFont(Font.font("Segoe UI", FontWeight.BOLD, 11));
         lblHeader.setTextFill(Color.web("#2E7D32"));
+        lblHeader.setStyle("-fx-text-fill: #2E7D32;");
         
         lblIncome = new Label("Rp 0");
         lblIncome.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
         lblIncome.setTextFill(Color.web("#2E7D32"));
+        lblIncome.setStyle("-fx-text-fill: #2E7D32;");
         
         cardTotal.getChildren().addAll(lblHeader, lblIncome);
         cardTotal.setEffect(shadow);
@@ -175,9 +183,11 @@ public class ReportView {
         Label lblTitle = new Label(title);
         lblTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 9));
         lblTitle.setTextFill(Color.web(textHex));
+        lblTitle.setStyle("-fx-text-fill: " + textHex + ";");
         
         lblValue.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
         lblValue.setTextFill(Color.web(textHex));
+        lblValue.setStyle("-fx-text-fill: " + textHex + ";");
         
         card.getChildren().addAll(lblTitle, lblValue);
         
