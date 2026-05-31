@@ -45,7 +45,17 @@ public class ReportView {
         
         // Bagian Kiri: Filter tanggal & ringkasan statistik & tombol
         VBox leftPane = buildLeftPanel();
-        root.setLeft(leftPane);
+        ScrollPane scrollPane = new ScrollPane(leftPane);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle(
+                "-fx-background-color: transparent; " +
+                "-fx-background: transparent; " +
+                "-fx-viewport-background: transparent; " +
+                "-fx-border-color: transparent;");
+        scrollPane.setPrefWidth(340);
+        root.setLeft(scrollPane);
         
         // Bagian Tengah/Kanan: Tab tabel dan grafik
         VBox centerPane = buildCenterPanel();
@@ -232,6 +242,10 @@ public class ReportView {
         chartsLayout.getChildren().addAll(barChart, pieChart);
         HBox.setHgrow(barChart, Priority.ALWAYS);
         HBox.setHgrow(pieChart, Priority.ALWAYS);
+        VBox.setVgrow(chartsLayout, Priority.ALWAYS); // Stretch vertically to fill the available height!
+        
+        barChart.setMaxHeight(Double.MAX_VALUE); // Allow chart to grow vertically
+        pieChart.setMaxHeight(Double.MAX_VALUE); // Allow chart to grow vertically
         
         chartBox.getChildren().add(chartsLayout);
         tabCharts.setContent(chartBox);

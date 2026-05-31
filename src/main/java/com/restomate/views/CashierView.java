@@ -68,7 +68,27 @@ public class CashierView {
 
         // Sidebar kanan: keranjang
         VBox rightSidebar = buildCartSidebar();
-        root.setRight(rightSidebar);
+        ScrollPane scrollPane = new ScrollPane(rightSidebar);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-background: white; " +
+                "-fx-border-color: " + CLR_BORDER + "; " +
+                "-fx-border-width: 0 0 0 1;");
+        scrollPane.setPrefWidth(380);
+
+        // Dynamically bind cartTable's height based on scrollPane viewport height
+        // to make it look flexible and fill vertical space on larger screens (like 1920x1080)
+        cartTable.prefHeightProperty().bind(
+                javafx.beans.binding.Bindings.createDoubleBinding(() -> {
+                    double val = scrollPane.getHeight() - 600; // 600px is the height of detailsGrid + paymentGrid + costBox + btnPay + paddings
+                    return Math.max(180.0, val);
+                }, scrollPane.heightProperty())
+        );
+
+        root.setRight(scrollPane);
 
         controller = new CashierController(this);
     }
@@ -141,12 +161,9 @@ public class CashierView {
     private VBox buildCartSidebar() {
         VBox sidebar = new VBox(10);
         sidebar.setPadding(new Insets(10));
-        sidebar.setPrefWidth(380);
+        sidebar.setPrefWidth(360);
         sidebar.setBackground(new Background(new BackgroundFill(
                 Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
-        sidebar.setStyle(
-                "-fx-border-color: " + CLR_BORDER + ";" +
-                "-fx-border-width: 0 0 0 1;");
         BorderPane.setMargin(sidebar, new Insets(0));
 
         // Judul keranjang

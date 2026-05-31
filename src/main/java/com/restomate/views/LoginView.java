@@ -32,7 +32,6 @@ public class LoginView {
 
     private void buildUI() {
         root = new HBox();
-        root.setPrefSize(900, 620);
 
         // =============================================
         // PANEL KIRI — Branding Restoran

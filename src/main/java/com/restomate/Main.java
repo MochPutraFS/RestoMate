@@ -27,8 +27,8 @@ public class Main extends Application {
 
         primaryStage.setTitle("RestoMate - Restaurant Management System");
         primaryStage.setScene(mainScene);
-        primaryStage.setMinWidth(960);
-        primaryStage.setMinHeight(640);
+        primaryStage.setMinWidth(850);
+        primaryStage.setMinHeight(550);
         primaryStage.show();
     }
 

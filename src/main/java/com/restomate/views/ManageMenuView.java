@@ -52,7 +52,17 @@ public class ManageMenuView {
 
         // Kanan: Form input
         VBox rightForm = buildFormArea();
-        root.setRight(rightForm);
+        ScrollPane scrollPane = new ScrollPane(rightForm);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-background: white; " +
+                "-fx-border-color: " + CLR_BORDER + "; " +
+                "-fx-border-width: 0 0 0 1;");
+        scrollPane.setPrefWidth(310);
+        root.setRight(scrollPane);
 
         controller = new ManageMenuController(this);
     }
@@ -188,12 +198,9 @@ public class ManageMenuView {
     private VBox buildFormArea() {
         VBox formCard = new VBox(18);
         formCard.setPadding(new Insets(12, 14, 12, 14));
-        formCard.setPrefWidth(310);
+        formCard.setPrefWidth(290);
         formCard.setBackground(new Background(new BackgroundFill(
                 Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
-        formCard.setStyle(
-                "-fx-border-color: " + CLR_BORDER + ";" +
-                "-fx-border-width: 0 0 0 1;");
         BorderPane.setMargin(formCard, new Insets(0));
 
         Label lblTitle = new Label("✏️ Detail Menu");
